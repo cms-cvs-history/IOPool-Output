@@ -1,4 +1,4 @@
-// $Id: PoolOutputModule.cc,v 1.29 2006/06/24 01:45:44 wmtan Exp $
+// $Id: PoolOutputModule.cc,v 1.30 2006/06/24 05:46:07 wmtan Exp $
 
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "IOPool/Common/interface/PoolDataSvc.h"
@@ -156,7 +156,9 @@ namespace edm {
     startTransaction();
     // Write auxiliary branch
     EventAux aux;
-    aux.process_history_ = e.processHistory();
+    aux.processHistory_ = e.processHistory();
+    // TODO:: Replace by reah hash.
+    aux.processHistoryHash_ = Hash<ProcessNameList>();
     aux.id_ = e.id();
     aux.time_ = e.time();
 
@@ -251,10 +253,17 @@ namespace edm {
 	it != om_->descVec_.end(); ++it) {
 	BranchDescription const& pd = **it;
 	std::string const& full = pd.branchName() + "obj";
-	std::string const& alias = (pd.branchAlias().empty() ?
-        (pd.productInstanceName().empty() ? pd.moduleLabel() : pd.productInstanceName())
-        : pd.branchAlias());
-	t->SetAlias(alias.c_str(), full.c_str());
+	if (pd.branchAliases().empty()) {
+	  std::string const& alias =
+	      (pd.productInstanceName().empty() ? pd.moduleLabel() : pd.productInstanceName());
+	  t->SetAlias(alias.c_str(), full.c_str());
+	} else {
+	  std::set<std::string>::const_iterator it = pd.branchAliases().begin();
+	  std::set<std::string>::const_iterator itend = pd.branchAliases().end();
+	  for (; it != itend; ++it) {
+	    t->SetAlias((*it).c_str(), full.c_str());
+	  }
+	}
       }
       t->Write(t->GetName(), TObject::kWriteDelete);
     }
