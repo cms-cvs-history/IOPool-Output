@@ -1,4 +1,4 @@
-// $Id: PoolOutputModule.cc,v 1.30 2006/06/24 05:46:07 wmtan Exp $
+// $Id: PoolOutputModule.cc,v 1.30.2.1 2006/06/27 03:27:43 wmtan Exp $
 
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "IOPool/Common/interface/PoolDataSvc.h"
@@ -157,8 +157,7 @@ namespace edm {
     // Write auxiliary branch
     EventAux aux;
     aux.processHistory_ = e.processHistory();
-    // TODO:: Replace by reah hash.
-    aux.processHistoryHash_ = Hash<ProcessNameList>();
+    aux.processHistoryID_ = aux.processHistory_.id();
     aux.id_ = e.id();
     aux.time_ = e.time();
 
