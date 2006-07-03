@@ -1,4 +1,4 @@
-// $Id: PoolOutputModule.cc,v 1.30.2.3 2006/06/30 04:32:11 wmtan Exp $
+// $Id: PoolOutputModule.cc,v 1.30.2.4 2006/07/03 03:31:03 wmtan Exp $
 
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "IOPool/Common/interface/PoolDataSvc.h"
@@ -189,7 +189,8 @@ namespace edm {
     pool::Ref<const EventAux> ra(context(), &aux);
     ra.markWrite(auxiliaryPlacement_);	
 
-    EventProvenance eventProvenance;
+    std::list<BranchEntryDescription> dummyProvenances;
+
     // Loop over EDProduct branches, fill the provenance, and write the branch.
     for (OutputItemList::const_iterator i = outputItemList_.begin();
 	 i != outputItemList_.end(); ++i) {
@@ -212,7 +213,9 @@ namespace edm {
 	  event.status_ = BranchEntryDescription::CreatorNotRun;
 	  event.isPresent_ = false;
 	  event.cid_ = 0;
-	  pool::Ref<BranchEntryDescription const> refp(context(), &event);
+	  
+	  dummyProvenances.push_front(event); 
+	  pool::Ref<BranchEntryDescription const> refp(context(), &*dummyProvenances.begin());
 	  refp.markWrite(i->provenancePlacement_);
 	} else {
 	    throw edm::Exception(errors::ProductNotFound,"NoMatch")
