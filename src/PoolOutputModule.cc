@@ -1,4 +1,4 @@
-// $Id: PoolOutputModule.cc,v 1.30.2.2 2006/06/27 23:25:05 wmtan Exp $
+// $Id: PoolOutputModule.cc,v 1.30.2.3 2006/06/30 04:32:11 wmtan Exp $
 
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "IOPool/Common/interface/PoolDataSvc.h"
@@ -80,21 +80,21 @@ namespace edm {
       processHistoryPlacement_(),
       om_(om) {
     std::string const suffix(".root");
-    std::string::size_type offset = om->fileName_.rfind(suffix);
-    bool ext = (offset == om->fileName_.size() - suffix.size());
-    std::string fileBase(ext ? om->fileName_.substr(0, offset): om->fileName_);
-    if (om->fileCount_) {
+    std::string::size_type offset = om_->fileName_.rfind(suffix);
+    bool ext = (offset == om_->fileName_.size() - suffix.size());
+    std::string fileBase(ext ? om_->fileName_.substr(0, offset): om_->fileName_);
+    if (om_->fileCount_) {
       std::ostringstream ofilename;
-      ofilename << fileBase << std::setw(3) << std::setfill('0') << om->fileCount_ << suffix;
+      ofilename << fileBase << std::setw(3) << std::setfill('0') << om_->fileCount_ << suffix;
       file_ = ofilename.str();
-      if (!om->logicalFileName_.empty()) {
+      if (!om_->logicalFileName_.empty()) {
 	std::ostringstream lfilename;
-	lfilename << om->logicalFileName_ << std::setw(3) << std::setfill('0') << om->fileCount_;
+	lfilename << om_->logicalFileName_ << std::setw(3) << std::setfill('0') << om_->fileCount_;
 	lfn_ = lfilename.str();
       }
     } else {
       file_ = fileBase + suffix;
-      lfn_ = om->logicalFileName_;
+      lfn_ = om_->logicalFileName_;
     }
     makePlacement(poolNames::eventTreeName(), poolNames::auxiliaryBranchName(), auxiliaryPlacement_);
     makePlacement(poolNames::metaDataTreeName(), poolNames::productDescriptionBranchName(),
@@ -108,10 +108,10 @@ namespace edm {
     makePlacement(poolNames::metaDataTreeName(), poolNames::fileFormatVersionBranchName(),
 	fileFormatVersionPlacement_);
     ProductRegistry pReg;
-    pReg.setNextID(om->nextID());
+    pReg.setNextID(om_->nextID());
    
-    for (Selections::const_iterator it = om->descVec_.begin();
-      it != om->descVec_.end(); ++it) {
+    for (Selections::const_iterator it = om_->descVec_.begin();
+      it != om_->descVec_.end(); ++it) {
       pReg.copyProduct(**it);
       pool::Placement provenancePlacement;
       pool::Placement eventPlacement;
@@ -120,8 +120,8 @@ namespace edm {
       outputItemList_.push_back(OutputItem(*it, true, provenancePlacement, eventPlacement));
       branchNames_.push_back((*it)->branchName());
     }
-    for (Selections::const_iterator it = om->droppedVec_.begin();
-      it != om->droppedVec_.end(); ++it) {
+    for (Selections::const_iterator it = om_->droppedVec_.begin();
+      it != om_->droppedVec_.end(); ++it) {
       pReg.copyProduct(**it);
       pool::Placement provenancePlacement;
       makePlacement(poolNames::eventMetaDataTreeName(), (*it)->branchName(), provenancePlacement);
@@ -130,14 +130,11 @@ namespace edm {
 
     startTransaction();
 
-    pool::Ref<ProductRegistry const> rp(om->context(), &pReg);
+    pool::Ref<ProductRegistry const> rp(om_->context(), &pReg);
     rp.markWrite(productDescriptionPlacement_);
 
-    pool::Ref<ModuleDescriptionMap const> rmod(om->context(), &ModuleDescriptionRegistry::instance()->data());
+    pool::Ref<ModuleDescriptionMap const> rmod(om_->context(), &ModuleDescriptionRegistry::instance()->data());
     rmod.markWrite(moduleDescriptionPlacement_);
-
-    pool::Ref<ProcessNameListMap const> rhist(om->context(), &ProcessNameListRegistry::instance()->data());
-    rhist.markWrite(processHistoryPlacement_);
 
     typedef std::map<ParameterSetID, ParameterSetBlob> PsetMap;
     PsetMap psetMap;
@@ -145,7 +142,7 @@ namespace edm {
     for (pset::Registry::const_iterator it = psetRegistry->begin(); it != psetRegistry->end(); ++it) {
       psetMap.insert(std::make_pair(it->first, ParameterSetBlob(it->second.toStringOfTracked())));
     }
-    pool::Ref<PsetMap const> rpparam(om->context(), &psetMap);
+    pool::Ref<PsetMap const> rpparam(om_->context(), &psetMap);
     rpparam.markWrite(parameterSetPlacement_);
 
     commitAndFlushTransaction();
@@ -155,11 +152,11 @@ namespace edm {
     Service<JobReport> reportSvc;
     reportToken_ = reportSvc->outputFileOpened(
 		      file_, lfn_,  // PFN and LFN
-		      om->catalog_.url(),  // catalog
+		      om_->catalog_.url(),  // catalog
 		      moduleName,   // module class name
-		      om->moduleLabel_,  // module label
+		      om_->moduleLabel_,  // module label
 		      branchNames_); // branch names being written
-    om->catalog_.registerFile(file_, lfn_);
+    om_->catalog_.registerFile(file_, lfn_);
   }
 
   void PoolOutputModule::PoolFile::startTransaction() const {
@@ -275,6 +272,10 @@ namespace edm {
   }
 
   void PoolOutputModule::PoolFile::endFile() {
+    startTransaction();
+    pool::Ref<ProcessNameListMap const> rhist(om_->context(), &ProcessNameListRegistry::instance()->data());
+    rhist.markWrite(processHistoryPlacement_);
+
     commitAndFlushTransaction();
     om_->catalog_.commitCatalog();
     context()->session().disconnectAll();
