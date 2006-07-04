@@ -1,4 +1,4 @@
-// $Id: PoolOutputModule.cc,v 1.30.2.4 2006/07/03 03:31:03 wmtan Exp $
+// $Id: PoolOutputModule.cc,v 1.30.2.5 2006/07/03 16:15:28 wmtan Exp $
 
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "IOPool/Common/interface/PoolDataSvc.h"
@@ -8,7 +8,7 @@
 #include "DataFormats/Common/interface/BranchKey.h"
 #include "FWCore/Framework/interface/EventPrincipal.h"
 #include "FWCore/Framework/interface/ModuleDescriptionRegistry.h"
-#include "FWCore/Framework/interface/ProcessNameListRegistry.h"
+#include "FWCore/Framework/interface/ProcessHistoryRegistry.h"
 #include "DataFormats/Common/interface/EventProvenance.h"
 #include "DataFormats/Common/interface/ProductRegistry.h"
 #include "DataFormats/Common/interface/ParameterSetBlob.h"
@@ -276,7 +276,7 @@ namespace edm {
 
   void PoolOutputModule::PoolFile::endFile() {
     startTransaction();
-    pool::Ref<ProcessNameListMap const> rhist(om_->context(), &ProcessNameListRegistry::instance()->data());
+    pool::Ref<ProcessHistoryMap const> rhist(om_->context(), &ProcessHistoryRegistry::instance()->data());
     rhist.markWrite(processHistoryPlacement_);
 
     commitAndFlushTransaction();
