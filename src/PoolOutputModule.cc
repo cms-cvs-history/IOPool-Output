@@ -1,4 +1,4 @@
-// $Id: PoolOutputModule.cc,v 1.30.2.5 2006/07/03 16:15:28 wmtan Exp $
+// $Id: PoolOutputModule.cc,v 1.30.2.6 2006/07/04 14:48:15 wmtan Exp $
 
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "IOPool/Common/interface/PoolDataSvc.h"
@@ -9,7 +9,6 @@
 #include "FWCore/Framework/interface/EventPrincipal.h"
 #include "FWCore/Framework/interface/ModuleDescriptionRegistry.h"
 #include "FWCore/Framework/interface/ProcessHistoryRegistry.h"
-#include "DataFormats/Common/interface/EventProvenance.h"
 #include "DataFormats/Common/interface/ProductRegistry.h"
 #include "DataFormats/Common/interface/ParameterSetBlob.h"
 #include "DataFormats/Common/interface/Wrapper.h"
