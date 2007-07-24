@@ -1,4 +1,4 @@
-// $Id: PoolOutputModule.cc,v 1.45 2006/10/03 19:11:54 wmtan Exp $
+// $Id: PoolOutputModule.cc,v 1.45.2.1 2006/10/10 04:29:34 wmtan Exp $
 
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "IOPool/Common/interface/PoolDataSvc.h"
@@ -51,7 +51,8 @@ namespace edm {
     compressionLevel_(pset.getUntrackedParameter<int>("compressionLevel", 1)),
     moduleLabel_(pset.getParameter<std::string>("@module_label")),
     fileCount_(0),
-    poolFile_() {
+    poolFile_(),
+    currentRun_(0) {
     ClassFiller();
     // We need to set a custom streamer for edm::RefCore so that it will not be split.
     // even though a custom streamer is not otherwise necessary.
@@ -78,6 +79,9 @@ namespace edm {
   }
 
   void PoolOutputModule::endJob() {
+    Service<JobReport> reportSvc;
+    reportSvc->reportLumiSection(currentRun_, 1);
+
     poolFile_->endFile();
   }
 
@@ -85,6 +89,13 @@ namespace edm {
   }
 
   void PoolOutputModule::write(EventPrincipal const& e) {
+      if (currentRun_ != e.id().run()) {
+	if (currentRun_ != 0) {
+          Service<JobReport> reportSvc;
+          reportSvc->reportLumiSection(currentRun_, 1);
+	}
+	currentRun_ = e.id().run();
+      }
       if (poolFile_->writeOne(e)) {
 	++fileCount_;
 	poolFile_ = boost::shared_ptr<PoolFile>(new PoolFile(this));
