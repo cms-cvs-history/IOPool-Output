@@ -1,4 +1,4 @@
-// $Id: RootOutputFile.cc,v 1.7 2007/08/28 14:31:01 wmtan Exp $
+// $Id: RootOutputFile.cc,v 1.8 2007/08/28 18:22:39 wmtan Exp $
 
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "DataFormats/Provenance/interface/EventAuxiliary.h" 
@@ -40,7 +40,7 @@ namespace edm {
       eventCount_(0),
       fileSizeCheckEvent_(100),
       om_(om),
-      filePtr_(TFile::Open(file_.c_str(), "update", "", om_->compressionLevel())),
+      filePtr_(TFile::Open(file_.c_str(), "recreate", "", om_->compressionLevel())),
       metaDataTree_(0),
       eventAux_(),
       lumiAux_(),
