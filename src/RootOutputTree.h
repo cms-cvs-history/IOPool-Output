@@ -5,7 +5,7 @@
 
 RootOutputTree.h // used by ROOT output modules
 
-$Id: RootOutputTree.h,v 1.12 2008/01/04 17:07:01 wmtan Exp $
+$Id: RootOutputTree.h,v 1.13 2008/01/10 17:32:57 wmtan Exp $
 
 ----------------------------------------------------------------------*/
 
@@ -47,7 +47,7 @@ namespace edm {
 		   std::vector<std::string> renamedList = std::vector<std::string>()) :
       filePtr_(filePtr),
       tree_(fastCloning ?
-		cloneTTree(filePtr.get(), tree, dropList, renamedList)
+		cloneTTree(filePtr.get(), tree, dropList, renamedList, true)
 		:
 		makeTTree(filePtr.get(), BranchTypeToProductTreeName(branchType), splitLevel)),
       metaTree_(fastCloning ?
@@ -78,7 +78,7 @@ namespace edm {
     
     static void fastCloneTTree(TTree *in, TTree *out);
 
-    static TTree * cloneTTree(TFile *filePtr, TTree *tree, Selections const& dropList, std::vector<std::string> const& renamedList);
+    static TTree * cloneTTree(TFile *filePtr, TTree *tree, Selections const& dropList, std::vector<std::string> const& renamedList, bool force = false);
 
     static TTree * makeTTree(TFile *filePtr, std::string const& name, int splitLevel);
 

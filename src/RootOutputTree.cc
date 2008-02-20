@@ -1,13 +1,33 @@
 #include "RootOutputTree.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TBranchElement.h"
+#include "TVirtualCollectionProxy.h"
 #include "TTreeCloner.h"
 #include "FWCore/Utilities/interface/Algorithms.h"
 
 #include "boost/bind.hpp"
 #include <algorithm>
+#include <cstring>
 
 namespace edm {
+
+  namespace {
+    void forceStreamerInfo(TFile * filePtr, TObjArray * branches) {
+      for (int i = 0; i < branches->GetEntries(); ++i) {
+	TBranchElement * br = (TBranchElement *)branches->At(i);
+	br->GetInfo()->ForceWriteInfo(filePtr);
+	if (std::strlen(br->GetClonesName())) {
+	  TClass *cp = gROOT->GetClass(br->GetClonesName());
+	  if (cp) {
+	    cp->GetStreamerInfo()->ForceWriteInfo(filePtr);
+	  }
+	}
+    	TObjArray * brs = br->GetListOfBranches();
+	forceStreamerInfo(filePtr, brs);
+      }
+    }
+  }
 
   TTree *
   RootOutputTree::assignTTree(TFile * filePtr, TTree * tree) {
@@ -25,13 +45,17 @@ namespace edm {
   }
 
   TTree *
-  RootOutputTree::cloneTTree(TFile * filePtr, TTree *tree, Selections const& dropList, std::vector<std::string> const& renamedList) {
+  RootOutputTree::cloneTTree(TFile * filePtr, TTree *tree, Selections const& dropList, std::vector<std::string> const& renamedList, bool force) {
     pruneTTree(tree, dropList, renamedList);
     TTree *newTree = tree->CloneTree(0);
     tree->SetBranchStatus("*", 1);
 //  Break association of the tree with its clone
     tree->GetListOfClones()->Remove(newTree);
     newTree->ResetBranchAddresses();
+    if (force) {
+      TObjArray * branches = newTree->GetListOfBranches();
+      forceStreamerInfo(filePtr, branches);
+    }
     return assignTTree(filePtr, newTree);
   }
 
