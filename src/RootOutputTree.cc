@@ -6,6 +6,7 @@
 
 #include "boost/bind.hpp"
 #include <algorithm>
+#include <cstring>
 
 namespace edm {
 
@@ -22,6 +23,12 @@ namespace edm {
   RootOutputTree::makeTTree(TFile * filePtr, std::string const& name, int splitLevel) {
     TTree *tree = new TTree(name.c_str(), "", splitLevel);
     return assignTTree(filePtr, tree);
+  }
+
+  TTree *
+  RootOutputTree::pseudoCloneTTree(TFile * filePtr, TTree *tree, int splitLevel) {
+    TTree *newTree = new TTree(tree->GetName(), tree->GetTitle(), splitLevel);
+    return assignTTree(filePtr, newTree);
   }
 
   TTree *
@@ -124,12 +131,16 @@ namespace edm {
         metaBranches_.push_back(meta);
       }
       if (selected) {
-        TBranch * branch = tree_->GetBranch(prod.branchName().c_str());
-        if (branch != 0) {
-	  branch->SetAddress(&pProd);
+        TBranch * oldBranch = (fastCloning_ ? oldTree_->GetBranch(prod.branchName().c_str()) : 0);
+        if (oldBranch != 0) {
+	  TBranch *branch = tree_->Branch(prod.branchName().c_str(),
+		   prod.wrappedName().c_str(),
+		   &pProd,
+		   (prod.basketSize() == BranchDescription::invalidBasketSize ? basketSize_ : prod.basketSize()),
+		   oldBranch->GetSplitLevel());
           clonedBranches_.push_back(branch);
 	} else {
-	  branch = tree_->Branch(prod.branchName().c_str(),
+	  TBranch *branch = tree_->Branch(prod.branchName().c_str(),
 		   prod.wrappedName().c_str(),
 		   &pProd,
 		   (prod.basketSize() == BranchDescription::invalidBasketSize ? basketSize_ : prod.basketSize()),

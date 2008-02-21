@@ -5,7 +5,7 @@
 
 RootOutputTree.h // used by ROOT output modules
 
-$Id: RootOutputTree.h,v 1.12 2008/01/04 17:07:01 wmtan Exp $
+$Id: RootOutputTree.h,v 1.16 2008/02/20 04:05:52 wmtan Exp $
 
 ----------------------------------------------------------------------*/
 
@@ -46,14 +46,16 @@ namespace edm {
 		   Selections const& dropList = Selections(),
 		   std::vector<std::string> renamedList = std::vector<std::string>()) :
       filePtr_(filePtr),
-      tree_(fastCloning ?
-		cloneTTree(filePtr.get(), tree, dropList, renamedList)
+      fastCloning_(fastCloning),
+      tree_(fastCloning_ ?
+		pseudoCloneTTree(filePtr.get(), tree, splitLevel)
 		:
 		makeTTree(filePtr.get(), BranchTypeToProductTreeName(branchType), splitLevel)),
       metaTree_(fastCloning ?
 		cloneTTree(filePtr.get(), metaTree, Selections(), renamedList)
 		:
 		makeTTree(filePtr.get(), BranchTypeToMetaDataTreeName(branchType), 0)),
+      oldTree_(tree),
       auxBranch_(0),
       branches_(),
       metaBranches_(),
@@ -64,12 +66,10 @@ namespace edm {
       splitLevel_(splitLevel),
       branchNames_() {
 
-      auxBranch_ = tree_->GetBranch(BranchTypeToAuxiliaryBranchName(branchType).c_str());
-      if (auxBranch_ != 0) {
-	auxBranch_->SetAddress(&pAux);
+      auxBranch_ = tree_->Branch(BranchTypeToAuxiliaryBranchName(branchType).c_str(), &pAux, bufSize, 0);
+      if (fastCloning_) {
         clonedBranches_.push_back(auxBranch_);
       } else {
-        auxBranch_ = tree_->Branch(BranchTypeToAuxiliaryBranchName(branchType).c_str(), &pAux, bufSize, 0);
         branches_.push_back(auxBranch_);
       }
     }
@@ -79,6 +79,8 @@ namespace edm {
     static void fastCloneTTree(TTree *in, TTree *out);
 
     static TTree * cloneTTree(TFile *filePtr, TTree *tree, Selections const& dropList, std::vector<std::string> const& renamedList);
+
+    static TTree * pseudoCloneTTree(TFile *filePtr, TTree *tree, int splitLevel);
 
     static TTree * makeTTree(TFile *filePtr, std::string const& name, int splitLevel);
 
@@ -121,8 +123,10 @@ namespace edm {
 // Root owns them and uses bare pointers internally.
 // Therefore,using smart pointers here will do no good.
     boost::shared_ptr<TFile> filePtr_;
+    bool fastCloning_;
     TTree *const tree_;
     TTree *const metaTree_;
+    TTree *const oldTree_;
     TBranch * auxBranch_;
     std::vector<TBranch *> branches_; // does not include cloned branches
     std::vector<TBranch *> metaBranches_; // does not include cloned branches
