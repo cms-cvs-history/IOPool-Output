@@ -1,20 +1,34 @@
 #include "RootOutputTree.h"
+#include "TROOT.h"
 #include "TFile.h"
 #include "TTree.h"
 #include "TTreeCloner.h"
+#include "TBranchElement.h"
+#include "TStreamerInfo.h"
 #include "FWCore/Utilities/interface/Algorithms.h"
 
 #include "boost/bind.hpp"
 #include <algorithm>
+#include <limits>
+#include <cstring>
 
 namespace edm {
+  namespace {
+    void makeBranches(TTree * tree, TObjArray * branches) {
+      void * p = 0;
+      for (int i = 0; i < branches->GetEntries(); ++i) {
+	TBranchElement * br = (TBranchElement *)branches->At(i);
+	tree->Branch(br->GetName(), br->GetClassName(), &p, br->GetBasketSize(), br->GetSplitLevel());
+      }
+    }
+  }
 
   TTree *
   RootOutputTree::assignTTree(TFile * filePtr, TTree * tree) {
     tree->SetDirectory(filePtr);
     // Turn off autosaving because it is such a memory hog and we are not using
     // this check-pointing feature anyway.
-    tree->SetAutoSave(400000000000LL);
+    tree->SetAutoSave(std::numeric_limits<Long64_t>::max());
     return tree;
   }
 
@@ -22,6 +36,21 @@ namespace edm {
   RootOutputTree::makeTTree(TFile * filePtr, std::string const& name, int splitLevel) {
     TTree *tree = new TTree(name.c_str(), "", splitLevel);
     return assignTTree(filePtr, tree);
+  }
+
+  TTree *
+  RootOutputTree::pseudoCloneTTree(TFile * filePtr, TTree *tree, Selections const& dropList, std::vector<std::string> const& renamedList, int splitLevel) {
+    pruneTTree(tree, dropList, renamedList);
+    TTree *midTree = tree->CloneTree(0);
+    tree->SetBranchStatus("*", 1);
+//  Break association of the tree with its clone
+    tree->GetListOfClones()->Remove(midTree);
+    midTree->ResetBranchAddresses();
+    TTree *newTree = new TTree(tree->GetName(), tree->GetTitle(), splitLevel);
+    TObjArray * branches = midTree->GetListOfBranches();
+    makeBranches(newTree, branches);
+    delete midTree;
+    return assignTTree(filePtr, newTree);
   }
 
   TTree *
