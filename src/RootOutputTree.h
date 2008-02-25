@@ -5,7 +5,7 @@
 
 RootOutputTree.h // used by ROOT output modules
 
-$Id: RootOutputTree.h,v 1.12 2008/01/04 17:07:01 wmtan Exp $
+$Id: RootOutputTree.h,v 1.18 2008/02/21 21:21:56 wmtan Exp $
 
 ----------------------------------------------------------------------*/
 
@@ -46,8 +46,9 @@ namespace edm {
 		   Selections const& dropList = Selections(),
 		   std::vector<std::string> renamedList = std::vector<std::string>()) :
       filePtr_(filePtr),
+      fastCloning_(fastCloning),
       tree_(fastCloning ?
-		cloneTTree(filePtr.get(), tree, dropList, renamedList)
+		pseudoCloneTTree(filePtr.get(), tree, dropList, renamedList, splitLevel)
 		:
 		makeTTree(filePtr.get(), BranchTypeToProductTreeName(branchType), splitLevel)),
       metaTree_(fastCloning ?
@@ -79,6 +80,8 @@ namespace edm {
     static void fastCloneTTree(TTree *in, TTree *out);
 
     static TTree * cloneTTree(TFile *filePtr, TTree *tree, Selections const& dropList, std::vector<std::string> const& renamedList);
+
+    static TTree * pseudoCloneTTree(TFile *filePtr, TTree *tree, Selections const& dropList, std::vector<std::string> const& renamedList, int splitLevel);
 
     static TTree * makeTTree(TFile *filePtr, std::string const& name, int splitLevel);
 
@@ -121,6 +124,7 @@ namespace edm {
 // Root owns them and uses bare pointers internally.
 // Therefore,using smart pointers here will do no good.
     boost::shared_ptr<TFile> filePtr_;
+    bool fastCloning_;
     TTree *const tree_;
     TTree *const metaTree_;
     TBranch * auxBranch_;
