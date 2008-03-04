@@ -3,7 +3,7 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// $Id: PoolOutputModule.h,v 1.45 2008/02/01 20:23:42 wmtan Exp $
+// $Id: PoolOutputModule.h,v 1.41 2008/01/08 21:47:08 wmtan Exp $
 //
 // Class PoolOutputModule. Output module to POOL file
 //
@@ -15,8 +15,7 @@
 #include <memory>
 #include <string>
 #include <iosfwd>
-#include "boost/scoped_ptr.hpp"
-#include "boost/utility.hpp"
+#include "boost/shared_ptr.hpp"
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/OutputModule.h"
@@ -36,7 +35,6 @@ namespace edm {
     int const& basketSize() const {return basketSize_;}
     int const& splitLevel() const {return splitLevel_;}
     bool const& fastCloning() const {return fastCloning_;}
-    bool const& fastMetaCloning() const {return fastMetaCloning_;}
 
   private:
     virtual void openFile(FileBlock const& fb);
@@ -61,7 +59,6 @@ namespace edm {
     virtual void writeModuleDescriptionRegistry();
     virtual void writeParameterSetRegistry();
     virtual void writeProductDescriptionRegistry();
-    virtual void writeEntryDescriptions();
     virtual void finishEndFile();
 
     std::string const fileName_;
@@ -72,11 +69,10 @@ namespace edm {
     int const basketSize_;
     int const splitLevel_;
     bool fastCloning_;
-    bool fastMetaCloning_;
     FileBlock *fileBlock_;
     std::string const moduleLabel_;
     int fileCount_;
-    boost::scoped_ptr<RootOutputFile> rootOutputFile_;
+    boost::shared_ptr<RootOutputFile> rootFile_;
   };
 }
 
