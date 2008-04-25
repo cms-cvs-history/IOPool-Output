@@ -3,7 +3,7 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// $Id: PoolOutputModule.h,v 1.47 2008/04/16 22:02:33 wdd Exp $
+// $Id: PoolOutputModule.h,v 1.47.2.1 2008/04/25 19:20:24 wmtan Exp $
 //
 // Class PoolOutputModule. Output module to POOL file
 //
@@ -37,7 +37,6 @@ namespace edm {
     int const& splitLevel() const {return splitLevel_;}
     int const& treeMaxVirtualSize() const {return treeMaxVirtualSize_;}
     bool const& fastCloning() const {return fastCloning_;}
-    bool const& fastMetaCloning() const {return fastMetaCloning_;}
 
   private:
     virtual void openFile(FileBlock const& fb);
@@ -75,7 +74,6 @@ namespace edm {
     int const splitLevel_;
     int const treeMaxVirtualSize_;
     bool fastCloning_;
-    bool fastMetaCloning_;
     FileBlock *fileBlock_;
     std::string const moduleLabel_;
     int fileCount_;

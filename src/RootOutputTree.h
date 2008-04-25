@@ -5,7 +5,7 @@
 
 RootOutputTree.h // used by ROOT output modules
 
-$Id: RootOutputTree.h,v 1.27 2008/04/04 17:51:48 wmtan Exp $
+$Id: RootOutputTree.h,v 1.28 2008/04/16 22:02:33 wdd Exp $
 
 ----------------------------------------------------------------------*/
 
@@ -52,9 +52,7 @@ namespace edm {
       metaBranches_(),
       infoBranches_(),
       clonedBranches_(),
-      clonedMetaBranches_(),
       currentlyFastCloning_(),
-      currentlyFastMetaCloning_(),
       basketSize_(bufSize),
       splitLevel_(splitLevel) {
 
@@ -79,7 +77,7 @@ namespace edm {
 
     void addBranch(BranchDescription const& prod, bool selected, EntryDescriptionID*& pEntryDescID, void const*& pProd, bool inInput);
 
-    void fastCloneTree(TTree *tree, TTree *metaTree);
+    void fastCloneTree(TTree *tree);
 
     void fillTree() const;
 
@@ -102,9 +100,8 @@ namespace edm {
       if (metaTree_->GetNbranches() != 0) metaTree_->SetEntries(-1);
     }
 
-    void beginInputFile(bool fastCloning, bool fastMetaCloning) {
+    void beginInputFile(bool fastCloning) {
       currentlyFastCloning_ = fastCloning;
-      currentlyFastMetaCloning_ = fastMetaCloning;
     }
 
   private:
@@ -119,12 +116,10 @@ namespace edm {
     TBranch * auxBranch_;
     TBranch * statusBranch_;
     std::vector<TBranch *> branches_; // does not include cloned branches
-    std::vector<TBranch *> metaBranches_; // does not include cloned branches
+    std::vector<TBranch *> metaBranches_;
     std::vector<TBranch *> infoBranches_;
     std::vector<TBranch *> clonedBranches_;
-    std::vector<TBranch *> clonedMetaBranches_;
     bool currentlyFastCloning_;
-    bool currentlyFastMetaCloning_;
     int basketSize_;
     int splitLevel_;
   };

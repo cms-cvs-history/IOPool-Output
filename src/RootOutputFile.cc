@@ -1,4 +1,4 @@
-// $Id: RootOutputFile.cc,v 1.53 2008/04/16 22:02:33 wdd Exp $
+// $Id: RootOutputFile.cc,v 1.53.2.1 2008/04/25 19:20:24 wmtan Exp $
 
 #include "RootOutputFile.h"
 #include "PoolOutputModule.h"
@@ -102,7 +102,6 @@ namespace edm {
       fileSizeCheckEvent_(100),
       om_(om),
       currentlyFastCloning_(),
-      currentlyFastMetaCloning_(),
       filePtr_(TFile::Open(file_.c_str(), "recreate", "", om_->compressionLevel())),
       fid_(),
       fileIndex_(),
@@ -234,11 +233,10 @@ namespace edm {
   }
 
 
-  void RootOutputFile::beginInputFile(FileBlock const& fb, bool fastClone, bool fastMetaClone) {
+  void RootOutputFile::beginInputFile(FileBlock const& fb, bool fastClone) {
     currentlyFastCloning_ = om_->fastCloning() && fb.fastClonable() && fastClone;
-    currentlyFastMetaCloning_ = om_->fastCloning() && fb.fastClonable() && fastMetaClone;
-    eventTree_.beginInputFile(currentlyFastCloning_, currentlyFastMetaCloning_);
-    eventTree_.fastCloneTree(fb.tree(), fb.metaTree());
+    eventTree_.beginInputFile(currentlyFastCloning_);
+    eventTree_.fastCloneTree(fb.tree());
   }
 
   void RootOutputFile::respondToCloseInputFile(FileBlock const&) {
@@ -476,7 +474,6 @@ namespace edm {
   void RootOutputFile::RootOutputFile::fillBranches(BranchType const& branchType, Principal const& principal) const {
 
     bool const fastCloning = (branchType == InEvent) && currentlyFastCloning_;
-    bool const fastMetaCloning = (branchType == InEvent) && currentlyFastMetaCloning_;
     
     OutputItemList const& items = outputItemList_[branchType];
 
@@ -490,30 +487,27 @@ namespace edm {
       }
 
       bool getProd = i->selected_ && (i->branchDescription_->produced() || i->renamed_ || !fastCloning);
-      bool getProv = i->branchDescription_->produced() || i->renamed_ || !fastMetaCloning;
 
       EDProduct const* product = 0;
-      BasicHandle const bh = principal.getForOutput(id, getProd, getProv);
-      if (getProv) {
-        if (bh.provenance() == 0) {
-	  // No product with this ID is in the event.
-	  // Create and write the provenance.
-	  if (i->branchDescription_->produced_) {
-	    EntryDescription entryDescription;
-	    entryDescription.moduleDescriptionID_ = i->branchDescription_->moduleDescriptionID_;
-            EntryDescriptionRegistry::instance()->insertMapped(entryDescription);
-	    *i->entryDescriptionIDPtr_ = entryDescription.id();
-	  } else {
-	    throw edm::Exception(errors::ProductNotFound,"NoMatch")
-	      << "PoolOutputModule: Unexpected internal error.  Contact the framework group.\n"
-	      << "No group for branch" << i->branchDescription_->branchName_ << '\n';
-	  }
-        } else {
-	  product = bh.wrapper();
-	  *i->entryDescriptionIDPtr_ = bh.provenance()->event().id();
-        }
-      }
-      if (getProd) {
+      BasicHandle const bh = principal.getForOutput(id, getProd, true);
+      if (bh.provenance() == 0) {
+	// No product with this ID is in the event.
+	// Create and write the provenance.
+	if (i->branchDescription_->produced_) {
+	  EntryDescription entryDescription;
+	  entryDescription.moduleDescriptionID_ = i->branchDescription_->moduleDescriptionID_;
+	  EntryDescriptionRegistry::instance()->insertMapped(entryDescription);
+	  *i->entryDescriptionIDPtr_ = entryDescription.id();
+	} else {
+	  throw edm::Exception(errors::ProductNotFound,"NoMatch")
+	    << "PoolOutputModule: Unexpected internal error.  Contact the framework group.\n"
+	    << "No group for branch" << i->branchDescription_->branchName_ << '\n';
+	}
+	} else {
+	product = bh.wrapper();
+	*i->entryDescriptionIDPtr_ = bh.provenance()->event().id();
+	}
+	if (getProd) {
 	if (product == 0) {
 	  // No product with this ID is in the event.
 	  // Add a null product.

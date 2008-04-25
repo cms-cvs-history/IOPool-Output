@@ -3,7 +3,7 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// $Id: RootOutputFile.h,v 1.29 2008/03/05 05:55:31 wmtan Exp $
+// $Id: RootOutputFile.h,v 1.29.2.1 2008/04/25 19:20:24 wmtan Exp $
 //
 // Class PoolOutputModule. Output module to POOL file
 //
@@ -64,7 +64,7 @@ namespace edm {
     void writeProductDescriptionRegistry();
 
     void finishEndFile();
-    void beginInputFile(FileBlock const& fb, bool fastClone, bool fastMetaClone);
+    void beginInputFile(FileBlock const& fb, bool fastClone);
     void respondToCloseInputFile(FileBlock const& fb);
 
     bool isFileFull() const {return newFileAtEndOfRun_;}
@@ -120,7 +120,6 @@ namespace edm {
     unsigned int fileSizeCheckEvent_;
     PoolOutputModule const* om_;
     bool currentlyFastCloning_;
-    bool currentlyFastMetaCloning_;
     boost::shared_ptr<TFile> filePtr_;
     FileID fid_;
     FileIndex fileIndex_;

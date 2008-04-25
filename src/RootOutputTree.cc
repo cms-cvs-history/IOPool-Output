@@ -66,12 +66,9 @@ namespace edm {
   }
 
   void
-  RootOutputTree::fastCloneTree(TTree *tree, TTree *metaTree) {
+  RootOutputTree::fastCloneTree(TTree *tree) {
     if (currentlyFastCloning_) {
       fastCloneTTree(tree, tree_);
-    }
-    if (currentlyFastMetaCloning_) {
-      fastCloneTTree(metaTree, metaTree_);
     }
   }
 
@@ -83,9 +80,6 @@ namespace edm {
     if (!currentlyFastCloning_) {
       fillTTree(tree_, clonedBranches_);
     }
-    if (!currentlyFastMetaCloning_) {
-      fillTTree(metaTree_, clonedMetaBranches_);
-    }
   }
 
   void
@@ -95,11 +89,7 @@ namespace edm {
 			    void const*& pProd, bool inInput) {
       prod.init();
       TBranch *meta = metaTree_->Branch(prod.branchName().c_str(), &pEntryDescID, basketSize_, 0);
-      if (inInput) {
-	clonedMetaBranches_.push_back(meta);
-      } else {
-	metaBranches_.push_back(meta);
-      }
+      metaBranches_.push_back(meta);
       if (selected) {
 	TBranch *branch = tree_->Branch(prod.branchName().c_str(),
 		 prod.wrappedName().c_str(),
