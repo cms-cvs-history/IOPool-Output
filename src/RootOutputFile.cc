@@ -1,4 +1,4 @@
-// $Id: RootOutputFile.cc,v 1.52 2008/04/04 17:53:18 wmtan Exp $
+// $Id: RootOutputFile.cc,v 1.53 2008/04/16 22:02:33 wdd Exp $
 
 #include "RootOutputFile.h"
 #include "PoolOutputModule.h"
@@ -16,6 +16,9 @@
 #include "FWCore/Framework/interface/EventPrincipal.h"
 #include "FWCore/Framework/interface/LuminosityBlockPrincipal.h"
 #include "FWCore/Framework/interface/RunPrincipal.h"
+#include "DataFormats/Provenance/interface/BranchMapper.h"
+#include "DataFormats/Provenance/interface/BranchMapperRegistry.h"
+#include "DataFormats/Provenance/interface/EntryDescription.h"
 #include "DataFormats/Provenance/interface/EntryDescriptionRegistry.h"
 #include "DataFormats/Provenance/interface/History.h"
 #include "DataFormats/Provenance/interface/ModuleDescriptionRegistry.h"
@@ -107,6 +110,7 @@ namespace edm {
       lumiEntryNumber_(0LL),
       runEntryNumber_(0LL),
       metaDataTree_(0),
+      branchMapperTree_(0),
       entryDescriptionTree_(0),
       eventHistoryTree_(0),
       pEventAux_(0),
@@ -146,6 +150,7 @@ namespace edm {
     }
     // Don't split metadata tree or event description tree
     metaDataTree_         = RootOutputTree::makeTTree(filePtr_.get(), poolNames::metaDataTreeName(), 0);
+    branchMapperTree_     = RootOutputTree::makeTTree(filePtr_.get(), poolNames::branchMapperTreeName(), 0);
     entryDescriptionTree_ = RootOutputTree::makeTTree(filePtr_.get(), poolNames::entryDescriptionTreeName(), 0);
 
     // Create the tree that will carry (event) History objects.
@@ -322,16 +327,42 @@ namespace edm {
     return newFileAtEndOfRun_;
   }
 
+  void RootOutputFile::writeBranchMapper() {
+    BranchMapperID const* hash(0);
+    BranchMapper const*   desc(0);
+    
+    if (!branchMapperTree_->Branch(poolNames::branchMapperIDBranchName().c_str(), 
+					&hash, om_->basketSize(), 0))
+      throw edm::Exception(edm::errors::FatalRootError) 
+	<< "Failed to create a branch for BranchMapperIDs in the output file";
+
+    if (!branchMapperTree_->Branch(poolNames::branchMapperBranchName().c_str(), 
+					&desc, om_->basketSize(), 0))
+      throw edm::Exception(edm::errors::FatalRootError) 
+	<< "Failed to create a branch for BranchMappers in the output file";
+
+    BranchMapperRegistry& edreg = *BranchMapperRegistry::instance();
+    for (BranchMapperRegistry::const_iterator
+	   i = edreg.begin(),
+	   e = edreg.end();
+	 i != e;
+	 ++i) {
+	hash = const_cast<BranchMapperID*>(&(i->first)); // cast needed because keys are const
+	desc = &(i->second);
+	branchMapperTree_->Fill();
+      }
+  }
+
   void RootOutputFile::writeEntryDescriptions() {
     EntryDescriptionID const* hash(0);
     EntryDescription const*   desc(0);
     
-    if (! entryDescriptionTree_->Branch(poolNames::entryDescriptionIDBranchName().c_str(), 
+    if (!entryDescriptionTree_->Branch(poolNames::entryDescriptionIDBranchName().c_str(), 
 					&hash, om_->basketSize(), 0))
       throw edm::Exception(edm::errors::FatalRootError) 
 	<< "Failed to create a branch for EntryDescriptionIDs in the output file";
 
-    if (! entryDescriptionTree_->Branch(poolNames::entryDescriptionBranchName().c_str(), 
+    if (!entryDescriptionTree_->Branch(poolNames::entryDescriptionBranchName().c_str(), 
 					&desc, om_->basketSize(), 0))
       throw edm::Exception(edm::errors::FatalRootError) 
 	<< "Failed to create a branch for EntryDescriptions in the output file";
@@ -341,8 +372,7 @@ namespace edm {
 	   i = edreg.begin(),
 	   e = edreg.end();
 	 i != e;
-	 ++i)
-      {
+	 ++i) {
 	hash = const_cast<EntryDescriptionID*>(&(i->first)); // cast needed because keys are const
 	desc = &(i->second);
 	entryDescriptionTree_->Fill();
@@ -420,7 +450,8 @@ namespace edm {
     metaDataTree_->SetEntries(-1);
     RootOutputTree::writeTTree(metaDataTree_);
 
-    //entryDescriptionTree_->SetEntries(-1);
+    RootOutputTree::writeTTree(branchMapperTree_);
+
     RootOutputTree::writeTTree(entryDescriptionTree_);
 
     // Create branch aliases for all the branches in the

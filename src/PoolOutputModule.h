@@ -3,7 +3,7 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// $Id: PoolOutputModule.h,v 1.46 2008/03/04 00:05:03 paterno Exp $
+// $Id: PoolOutputModule.h,v 1.47 2008/04/16 22:02:33 wdd Exp $
 //
 // Class PoolOutputModule. Output module to POOL file
 //
@@ -63,6 +63,7 @@ namespace edm {
     virtual void writeParameterSetRegistry();
     virtual void writeProductDescriptionRegistry();
     virtual void writeEntryDescriptions();
+    virtual void writeBranchMapper();
     virtual void finishEndFile();
 
     std::string const fileName_;

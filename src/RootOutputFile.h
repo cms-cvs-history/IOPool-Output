@@ -3,7 +3,7 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// $Id: RootOutputFile.h,v 1.28 2008/03/04 05:14:48 wmtan Exp $
+// $Id: RootOutputFile.h,v 1.29 2008/03/05 05:55:31 wmtan Exp $
 //
 // Class PoolOutputModule. Output module to POOL file
 //
@@ -51,6 +51,7 @@ namespace edm {
     //void endFile();
     void writeLuminosityBlock(LuminosityBlockPrincipal const& lb);
     bool writeRun(RunPrincipal const& r);
+    void writeBranchMapper();
     void writeEntryDescriptions();
     void writeFileFormatVersion();
     void writeFileIdentifier();
@@ -127,6 +128,7 @@ namespace edm {
     FileIndex::EntryNumber_t lumiEntryNumber_;
     FileIndex::EntryNumber_t runEntryNumber_;
     TTree * metaDataTree_;
+    TTree * branchMapperTree_;
     TTree * entryDescriptionTree_;
     TTree * eventHistoryTree_;
     EventAuxiliary const*           pEventAux_;
