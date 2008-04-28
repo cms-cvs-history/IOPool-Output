@@ -1,4 +1,4 @@
-// $Id: RootOutputFile.cc,v 1.53.2.1 2008/04/25 19:20:24 wmtan Exp $
+// $Id: RootOutputFile.cc,v 1.53.2.2 2008/04/25 20:37:30 wmtan Exp $
 
 #include "RootOutputFile.h"
 #include "PoolOutputModule.h"
@@ -16,6 +16,7 @@
 #include "FWCore/Framework/interface/EventPrincipal.h"
 #include "FWCore/Framework/interface/LuminosityBlockPrincipal.h"
 #include "FWCore/Framework/interface/RunPrincipal.h"
+#include "DataFormats/Provenance/interface/BranchID.h"
 #include "DataFormats/Provenance/interface/BranchMapper.h"
 #include "DataFormats/Provenance/interface/BranchMapperRegistry.h"
 #include "DataFormats/Provenance/interface/EntryDescription.h"
@@ -480,11 +481,7 @@ namespace edm {
     // Loop over EDProduct branches, fill the provenance, and write the branch.
     for (OutputItemList::const_iterator i = items.begin(), iEnd = items.end(); i != iEnd; ++i) {
 
-      ProductID const& id = i->branchDescription_->productID_;
-      if (id == ProductID()) {
-	throw edm::Exception(edm::errors::ProductNotFound,"InvalidID")
-	  << "PoolOutputModule::write: invalid ProductID supplied in productRegistry\n";
-      }
+      BranchID const& id = i->branchDescription_->branchID();
 
       bool getProd = i->selected_ && (i->branchDescription_->produced() || i->renamed_ || !fastCloning);
 
