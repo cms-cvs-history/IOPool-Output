@@ -1,4 +1,4 @@
-// $Id: RootOutputFile.cc,v 1.53.2.2 2008/04/25 20:37:30 wmtan Exp $
+// $Id: RootOutputFile.cc,v 1.53.2.3 2008/04/28 18:05:43 wmtan Exp $
 
 #include "RootOutputFile.h"
 #include "PoolOutputModule.h"
@@ -116,11 +116,10 @@ namespace edm {
       pEventAux_(0),
       pLumiAux_(0),
       pRunAux_(0),
-      pProductStatuses_(0),
       pHistory_(0),
-      eventTree_(filePtr_, InEvent, pEventAux_, pProductStatuses_, om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
-      lumiTree_(filePtr_, InLumi, pLumiAux_, pProductStatuses_, om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
-      runTree_(filePtr_, InRun, pRunAux_, pProductStatuses_, om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
+      eventTree_(filePtr_, InEvent, pEventAux_, om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
+      lumiTree_(filePtr_, InLumi, pLumiAux_, om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
+      runTree_(filePtr_, InRun, pRunAux_, om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
       treePointers_(),
       newFileAtEndOfRun_(false), 
       dataTypeReported_(false)  {
@@ -143,7 +142,7 @@ namespace edm {
 	  it != itEnd; ++it) {
 	treePointers_[branchType]->addBranch(*it->branchDescription_,
 					      it->selected_,
-					      it->entryDescriptionIDPtr_,
+					      it->branchEntryInfoPtr_,
 					      it->product_,
 					      it < itMarker);
       }
@@ -272,8 +271,6 @@ namespace edm {
       dataTypeReported_ = true;
     }
 
-    // Product Statuses
-    pProductStatuses_ = &e.productStatuses();
     pHistory_ = & e.history();
 
     // Add event to index
@@ -306,8 +303,6 @@ namespace edm {
   void RootOutputFile::writeLuminosityBlock(LuminosityBlockPrincipal const& lb) {
     // Auxiliary branch
     pLumiAux_ = &lb.aux();
-    // Product Statuses
-    pProductStatuses_ = &lb.productStatuses();
     // Add lumi to index.
     fileIndex_.addEntry(pLumiAux_->run(), pLumiAux_->luminosityBlock(), 0U, lumiEntryNumber_);
     ++lumiEntryNumber_;
@@ -317,8 +312,6 @@ namespace edm {
   bool RootOutputFile::writeRun(RunPrincipal const& r) {
     // Auxiliary branch
     pRunAux_ = &r.aux();
-    // Product Statuses
-    pProductStatuses_ = &r.productStatuses();
     // Add run to index.
     fileIndex_.addEntry(pRunAux_->run(), 0U, 0U, runEntryNumber_);
     ++runEntryNumber_;
@@ -491,20 +484,24 @@ namespace edm {
 	// No product with this ID is in the event.
 	// Create and write the provenance.
 	if (i->branchDescription_->produced_) {
-	  EntryDescription entryDescription;
-	  entryDescription.moduleDescriptionID_ = i->branchDescription_->moduleDescriptionID_;
-	  EntryDescriptionRegistry::instance()->insertMapped(entryDescription);
-	  *i->entryDescriptionIDPtr_ = entryDescription.id();
+	  boost::shared_ptr<EntryDescription> edPtr(new EntryDescription);
+	  edPtr->moduleDescriptionID_ = i->branchDescription_->moduleDescriptionID_;
+	  EntryDescriptionRegistry::instance()->insertMapped(*edPtr);
+	  i->branchEntryInfoPtr_ =
+	     new BranchEntryInfo(i->branchDescription_->branchID(),
+			         i->branchDescription_->productIDtoAssign(),
+				 productstatus::neverCreated(),
+				 edPtr);
 	} else {
 	  throw edm::Exception(errors::ProductNotFound,"NoMatch")
 	    << "PoolOutputModule: Unexpected internal error.  Contact the framework group.\n"
 	    << "No group for branch" << i->branchDescription_->branchName_ << '\n';
 	}
-	} else {
+      } else {
 	product = bh.wrapper();
-	*i->entryDescriptionIDPtr_ = bh.provenance()->event().id();
-	}
-	if (getProd) {
+	*i->branchEntryInfoPtr_ = bh.provenance()->branchEntryInfo();
+      }
+      if (getProd) {
 	if (product == 0) {
 	  // No product with this ID is in the event.
 	  // Add a null product.

@@ -3,7 +3,7 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// $Id: RootOutputFile.h,v 1.29.2.1 2008/04/25 19:20:24 wmtan Exp $
+// $Id: RootOutputFile.h,v 1.29.2.2 2008/04/25 20:37:30 wmtan Exp $
 //
 // Class PoolOutputModule. Output module to POOL file
 //
@@ -29,7 +29,6 @@
 #include "DataFormats/Provenance/interface/FileID.h"
 #include "DataFormats/Provenance/interface/FileIndex.h"
 #include "DataFormats/Provenance/interface/LuminosityBlockAuxiliary.h"
-#include "DataFormats/Provenance/interface/ProductStatus.h"
 #include "DataFormats/Provenance/interface/RunAuxiliary.h"
 #include "DataFormats/Provenance/interface/Selections.h"
 #include "IOPool/Output/src/RootOutputTree.h"
@@ -82,18 +81,18 @@ namespace edm {
         std::map<std::string, int> treeMap_;
       };
       OutputItem() : branchDescription_(0),
-	 entryDescriptionIDSharedPtr_(new EntryDescriptionID),
-	 entryDescriptionIDPtr_(entryDescriptionIDSharedPtr_.get()),
-	 selected_(false), renamed_(false), product_(0) {}
+	branchEntryInfoSharedPtr_(new BranchEntryInfo),
+	branchEntryInfoPtr_(branchEntryInfoSharedPtr_.get()),
+	selected_(false), renamed_(false), product_(0) {}
       OutputItem(BranchDescription const* bd, bool sel, bool ren) :
 	branchDescription_(bd),
-	entryDescriptionIDSharedPtr_(new EntryDescriptionID),
-	entryDescriptionIDPtr_(entryDescriptionIDSharedPtr_.get()),
+	branchEntryInfoSharedPtr_(new BranchEntryInfo),
+	branchEntryInfoPtr_(branchEntryInfoSharedPtr_.get()),
 	selected_(sel), renamed_(ren), product_(0) {}
       ~OutputItem() {}
       BranchDescription const* branchDescription_;
-      boost::shared_ptr<EntryDescriptionID> entryDescriptionIDSharedPtr_;
-      mutable EntryDescriptionID * entryDescriptionIDPtr_;
+      boost::shared_ptr<BranchEntryInfo> branchEntryInfoSharedPtr_;
+      mutable BranchEntryInfo * branchEntryInfoPtr_;
       bool selected_;
       bool renamed_;
       mutable void const* product_;
@@ -133,7 +132,6 @@ namespace edm {
     EventAuxiliary const*           pEventAux_;
     LuminosityBlockAuxiliary const* pLumiAux_;
     RunAuxiliary const*             pRunAux_;
-    ProductStatusVector const*      pProductStatuses_;
     History const*                  pHistory_;
     RootOutputTree eventTree_;
     RootOutputTree lumiTree_;

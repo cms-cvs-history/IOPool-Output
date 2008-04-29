@@ -62,7 +62,6 @@ namespace edm {
   RootOutputTree::writeTree() const {
     writeTTree(tree_);
     writeTTree(metaTree_);
-    writeTTree(infoTree_);
   }
 
   void
@@ -74,7 +73,6 @@ namespace edm {
 
   void
   RootOutputTree::fillTree() const {
-    fillTTree(infoTree_, infoBranches_);
     fillTTree(metaTree_, metaBranches_);
     fillTTree(tree_, branches_);
     if (!currentlyFastCloning_) {
@@ -85,10 +83,10 @@ namespace edm {
   void
   RootOutputTree::addBranch(BranchDescription const& prod,
 			    bool selected,
-			    EntryDescriptionID *& pEntryDescID,
+			    BranchEntryInfo *& pBranchEntryInfo,
 			    void const*& pProd, bool inInput) {
       prod.init();
-      TBranch *meta = metaTree_->Branch(prod.branchName().c_str(), &pEntryDescID, basketSize_, 0);
+      TBranch *meta = metaTree_->Branch(prod.branchName().c_str(), &pBranchEntryInfo, basketSize_, 0);
       metaBranches_.push_back(meta);
       if (selected) {
 	TBranch *branch = tree_->Branch(prod.branchName().c_str(),
