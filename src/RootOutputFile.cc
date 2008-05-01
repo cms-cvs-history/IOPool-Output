@@ -1,4 +1,4 @@
-// $Id: RootOutputFile.cc,v 1.53.2.3 2008/04/28 18:05:43 wmtan Exp $
+// $Id: RootOutputFile.cc,v 1.53.2.4 2008/04/29 07:58:12 wmtan Exp $
 
 #include "RootOutputFile.h"
 #include "PoolOutputModule.h"
@@ -44,6 +44,7 @@
 #include <algorithm>
 #include <map>
 #include <iomanip>
+#include <sstream>
 
 namespace edm {
 
@@ -117,9 +118,12 @@ namespace edm {
       pLumiAux_(0),
       pRunAux_(0),
       pHistory_(0),
-      eventTree_(filePtr_, InEvent, pEventAux_, om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
-      lumiTree_(filePtr_, InLumi, pLumiAux_, om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
-      runTree_(filePtr_, InRun, pRunAux_, om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
+      eventTree_(filePtr_, InEvent, pEventAux_, pBranchEntryInfoVector_,
+                 om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
+      lumiTree_(filePtr_, InLumi, pLumiAux_, pBranchEntryInfoVector_,
+                om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
+      runTree_(filePtr_, InRun, pRunAux_, pBranchEntryInfoVector_,
+               om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
       treePointers_(),
       newFileAtEndOfRun_(false), 
       dataTypeReported_(false)  {
@@ -130,19 +134,19 @@ namespace edm {
 
     for (int i = InEvent; i < NumBranchTypes; ++i) {
       BranchType branchType = static_cast<BranchType>(i);
-      TTree * meta = (branchType == InEvent ? om_->fileBlock_->metaTree() : 
-		     (branchType == InLumi ? om_->fileBlock_->lumiMetaTree() : om_->fileBlock_->runMetaTree()));
-      fillItemList(om_->keptProducts()[branchType], om_->droppedProducts()[branchType], outputItemList_[branchType], meta);
-      int nBranches = (meta ? meta->GetNbranches() : 0);
+      TTree * theTree = (branchType == InEvent ? om_->fileBlock_->tree() : 
+		        (branchType == InLumi ? om_->fileBlock_->lumiTree() :
+                        om_->fileBlock_->runTree()));
+      fillItemList(om_->keptProducts()[branchType], om_->droppedProducts()[branchType], outputItemList_[branchType], theTree);
+      int nProductBranches = (theTree ? theTree->GetNbranches() - 1 : 0);
       // itMarker Marks one past the end of the branches thast are in the input file.
       // needed for fast cloning. 
-      OutputItemList::const_iterator itMarker = outputItemList_[branchType].begin() + nBranches;
+      OutputItemList::const_iterator itMarker = outputItemList_[branchType].begin() + nProductBranches;
       for (OutputItemList::const_iterator it = outputItemList_[branchType].begin(),
 	  itEnd = outputItemList_[branchType].end();
 	  it != itEnd; ++it) {
 	treePointers_[branchType]->addBranch(*it->branchDescription_,
 					      it->selected_,
-					      it->branchEntryInfoPtr_,
 					      it->product_,
 					      it < itMarker);
       }
@@ -214,7 +218,7 @@ namespace edm {
   void RootOutputFile::fillItemList(Selections const& keptVector,
 				    Selections const& droppedVector,
 				    OutputItemList & outputItemList,
-				    TTree * meta) {
+				    TTree * theTree) {
 
     // Fill outputItemList with an entry for each branch, including dropped branches.
     std::vector<std::string> const& renamed = om_->fileBlock_->sortedNewBranchNames();
@@ -229,7 +233,7 @@ namespace edm {
     // Sort outputItemList to allow fast copying.
     // meta is a pointer to the input XMetaData tree (X is Event, Run, or LuminosityBlock).
     // The branches in outputItemList must be in the same order as in the input tree, with all new branches at the end.
-    sort_all(outputItemList, OutputItem::Sorter(meta));
+    sort_all(outputItemList, OutputItem::Sorter(theTree));
   }
 
 

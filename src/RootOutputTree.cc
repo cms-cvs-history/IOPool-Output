@@ -1,16 +1,17 @@
+
 #include "RootOutputTree.h"
-#include "TROOT.h"
+
 #include "TFile.h"
-#include "TTree.h"
+#include "TBranch.h"
 #include "TTreeCloner.h"
-#include "TBranchElement.h"
-#include "TStreamerInfo.h"
+#include "Rtypes.h"
+
+#include "DataFormats/Provenance/interface/BranchDescription.h"
 #include "FWCore/Utilities/interface/Algorithms.h"
+#include "FWCore/Utilities/interface/EDMException.h"
 
 #include "boost/bind.hpp"
-#include <algorithm>
 #include <limits>
-#include <cstring>
 
 namespace edm {
   TTree *
@@ -26,10 +27,10 @@ namespace edm {
   RootOutputTree::makeTTree(TFile * filePtr, std::string const& name, int splitLevel) {
     TTree *tree = new TTree(name.c_str(), "", splitLevel);
     if (!tree) throw edm::Exception(edm::errors::FatalRootError)
-      << "Failed to create the tree: " << name << std::endl;
+      << "Failed to create the tree: " << name << "\n";
     if (tree->IsZombie())
       throw edm::Exception(edm::errors::FatalRootError)
-	<< "Tree: " << name << " is a zombie." << std::endl;
+	<< "Tree: " << name << " is a zombie." << "\n";
 				    
     return assignTTree(filePtr, tree);
   }
@@ -83,11 +84,8 @@ namespace edm {
   void
   RootOutputTree::addBranch(BranchDescription const& prod,
 			    bool selected,
-			    BranchEntryInfo *& pBranchEntryInfo,
 			    void const*& pProd, bool inInput) {
       prod.init();
-      TBranch *meta = metaTree_->Branch(prod.branchName().c_str(), &pBranchEntryInfo, basketSize_, 0);
-      metaBranches_.push_back(meta);
       if (selected) {
 	TBranch *branch = tree_->Branch(prod.branchName().c_str(),
 		 prod.wrappedName().c_str(),

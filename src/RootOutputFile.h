@@ -3,9 +3,9 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// $Id: RootOutputFile.h,v 1.29.2.2 2008/04/25 20:37:30 wmtan Exp $
+// $Id: RootOutputFile.h,v 1.29.2.3 2008/04/29 07:58:12 wmtan Exp $
 //
-// Class PoolOutputModule. Output module to POOL file
+// Class RootOutputFile
 //
 // Oringinal Author: Luca Lista
 // Current Author: Bill Tanenbaum
@@ -13,10 +13,9 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <map>
-#include <memory>
 #include <string>
-#include <iosfwd>
 #include <vector>
+
 #include "boost/array.hpp"
 #include "boost/shared_ptr.hpp"
 
@@ -24,27 +23,24 @@
 #include "FWCore/MessageLogger/interface/JobReport.h"
 #include "DataFormats/Provenance/interface/BranchDescription.h"
 #include "DataFormats/Provenance/interface/BranchType.h"
-#include "DataFormats/Provenance/interface/EntryDescriptionID.h"
-#include "DataFormats/Provenance/interface/EventAuxiliary.h"
 #include "DataFormats/Provenance/interface/FileID.h"
 #include "DataFormats/Provenance/interface/FileIndex.h"
-#include "DataFormats/Provenance/interface/LuminosityBlockAuxiliary.h"
-#include "DataFormats/Provenance/interface/RunAuxiliary.h"
 #include "DataFormats/Provenance/interface/Selections.h"
 #include "IOPool/Output/src/RootOutputTree.h"
+#include "DataFormats/Provenance/interface/BranchEntryInfo.h"
 
 class TTree;
 class TFile;
 
 namespace edm {
-  class ParameterSet;
   class PoolOutputModule;
   class History;
 
   class RootOutputFile {
   public:
     typedef boost::array<RootOutputTree *, NumBranchTypes> RootOutputTreePtrArray;
-    explicit RootOutputFile(PoolOutputModule * om, std::string const& fileName, std::string const& logicalFileName);
+    explicit RootOutputFile(PoolOutputModule * om, std::string const& fileName,
+                            std::string const& logicalFileName);
     ~RootOutputFile() {}
     void writeOne(EventPrincipal const& e);
     //void endFile();
@@ -132,6 +128,7 @@ namespace edm {
     EventAuxiliary const*           pEventAux_;
     LuminosityBlockAuxiliary const* pLumiAux_;
     RunAuxiliary const*             pRunAux_;
+    BranchEntryInfoVector const*    pBranchEntryInfoVector_;
     History const*                  pHistory_;
     RootOutputTree eventTree_;
     RootOutputTree lumiTree_;

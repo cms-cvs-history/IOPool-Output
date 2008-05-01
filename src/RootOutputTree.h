@@ -5,29 +5,23 @@
 
 RootOutputTree.h // used by ROOT output modules
 
-$Id: RootOutputTree.h,v 1.28.2.1 2008/04/25 20:37:31 wmtan Exp $
+$Id: RootOutputTree.h,v 1.28.2.2 2008/04/29 07:58:12 wmtan Exp $
 
 ----------------------------------------------------------------------*/
 
-#include <memory>
 #include <string>
 #include <vector>
 
 #include "boost/shared_ptr.hpp"
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/ParameterSet/interface/Registry.h"
-#include "DataFormats/Provenance/interface/BranchDescription.h"
 #include "DataFormats/Provenance/interface/BranchEntryInfo.h"
-#include "DataFormats/Provenance/interface/BranchKey.h"
 #include "DataFormats/Provenance/interface/BranchType.h"
-#include "DataFormats/Provenance/interface/ConstBranchDescription.h"
-#include "DataFormats/Provenance/interface/EventAuxiliary.h"
-#include "DataFormats/Provenance/interface/Selections.h"
-#include "DataFormats/Common/interface/Wrapper.h"
-#include "TBranch.h"
+
 #include "TTree.h"
+
 class TFile;
+class TBranch;
 
 namespace edm {
 
@@ -38,6 +32,7 @@ namespace edm {
     RootOutputTree(boost::shared_ptr<TFile> filePtr,
 		   BranchType const& branchType,
 		   T const*& pAux,
+		   BranchEntryInfoVector const*& pBranchEntryInfoVector,
 		   int bufSize,
 		   int splitLevel,
                    int treeMaxVirtualSize) :
@@ -54,8 +49,12 @@ namespace edm {
 
       if (treeMaxVirtualSize >= 0) tree_->SetMaxVirtualSize(treeMaxVirtualSize);
       auxBranch_ = tree_->Branch(BranchTypeToAuxiliaryBranchName(branchType).c_str(), &pAux, bufSize, 0);
-      clonedBranches_.push_back(auxBranch_);
-    }
+      clonedBranches_.push_back(auxBranch_);  
+
+      branchEntryInfoBranch_ = metaTree_->Branch(BranchTypeToBranchEntryInfoBranchName(branchType).c_str(),
+                                                 &pBranchEntryInfoVector, bufSize, 0);
+      metaBranches_.push_back(branchEntryInfoBranch_);
+  }
 
     ~RootOutputTree() {}
     
@@ -71,7 +70,6 @@ namespace edm {
 
     void addBranch(BranchDescription const& prod,
 		   bool selected,
-		   BranchEntryInfo*& pbranchEntryInfo,
 		   void const*& pProd, bool inInput);
 
     void fastCloneTree(TTree *tree);
@@ -106,9 +104,9 @@ namespace edm {
     TTree *const tree_;
     TTree *const metaTree_;
     TBranch * auxBranch_;
+    TBranch * branchEntryInfoBranch_;
     std::vector<TBranch *> branches_; // does not include cloned branches
     std::vector<TBranch *> metaBranches_;
-    std::vector<TBranch *> infoBranches_;
     std::vector<TBranch *> clonedBranches_;
     bool currentlyFastCloning_;
     int basketSize_;
