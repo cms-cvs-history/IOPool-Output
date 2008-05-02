@@ -1,4 +1,4 @@
-// $Id: RootOutputFile.cc,v 1.53.2.5 2008/05/01 20:35:34 wdd Exp $
+// $Id: RootOutputFile.cc,v 1.53.2.6 2008/05/02 06:15:17 wmtan Exp $
 
 #include "RootOutputFile.h"
 #include "PoolOutputModule.h"
@@ -483,7 +483,7 @@ namespace edm {
       bool getProd = i->selected_ && (i->branchDescription_->produced() || i->renamed_ || !fastCloning);
 
       EDProduct const* product = 0;
-      BasicHandle const bh = principal.getForOutput(id, getProd, true);
+      BasicHandle const bh = principal.getForOutput(id, getProd);
       if (bh.provenance() == 0) {
 	// No product with this ID is in the event.
 	// Create and write the provenance.
