@@ -1,4 +1,4 @@
-// $Id: RootOutputFile.cc,v 1.53.2.4 2008/04/29 07:58:12 wmtan Exp $
+// $Id: RootOutputFile.cc,v 1.53.2.5 2008/05/01 20:35:34 wdd Exp $
 
 #include "RootOutputFile.h"
 #include "PoolOutputModule.h"
@@ -487,9 +487,9 @@ namespace edm {
       if (bh.provenance() == 0) {
 	// No product with this ID is in the event.
 	// Create and write the provenance.
-	if (i->branchDescription_->produced_) {
+	if (i->branchDescription_->produced()) {
 	  boost::shared_ptr<EntryDescription> edPtr(new EntryDescription);
-	  edPtr->moduleDescriptionID_ = i->branchDescription_->moduleDescriptionID_;
+	  edPtr->moduleDescriptionID_ = i->branchDescription_->moduleDescriptionID();
 	  EntryDescriptionRegistry::instance()->insertMapped(*edPtr);
 	  i->branchEntryInfoPtr_ =
 	     new BranchEntryInfo(i->branchDescription_->branchID(),
@@ -499,7 +499,7 @@ namespace edm {
 	} else {
 	  throw edm::Exception(errors::ProductNotFound,"NoMatch")
 	    << "PoolOutputModule: Unexpected internal error.  Contact the framework group.\n"
-	    << "No group for branch" << i->branchDescription_->branchName_ << '\n';
+	    << "No group for branch" << i->branchDescription_->branchName() << '\n';
 	}
       } else {
 	product = bh.wrapper();
