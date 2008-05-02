@@ -1,7 +1,6 @@
-// $Id: PoolOutputModule.cc,v 1.105.2.3 2008/04/25 20:37:30 wmtan Exp $
 
 #include "IOPool/Output/src/PoolOutputModule.h"
-#include "boost/array.hpp" 
+
 #include "FWCore/MessageLogger/interface/JobReport.h" 
 #include "IOPool/Output/src/RootOutputFile.h" 
 #include "IOPool/Common/interface/ClassFiller.h"
@@ -13,11 +12,13 @@
 #include "FWCore/Framework/interface/FileBlock.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
+#include "DataFormats/Provenance/interface/FileFormatVersion.h"
+#include "FWCore/Utilities/interface/EDMException.h"
 
+#include "TTree.h"
 
-#include <map>
-#include <vector>
 #include <iomanip>
+#include <sstream>
 
 namespace edm {
   PoolOutputModule::PoolOutputModule(ParameterSet const& pset) :
@@ -106,7 +107,7 @@ namespace edm {
   void PoolOutputModule::writeParameterSetRegistry() { rootOutputFile_->writeParameterSetRegistry(); }
   void PoolOutputModule::writeProductDescriptionRegistry() { rootOutputFile_->writeProductDescriptionRegistry(); }
   void PoolOutputModule::writeEntryDescriptions() { rootOutputFile_->writeEntryDescriptions(); }
-  void PoolOutputModule::writeBranchMapper() { rootOutputFile_->writeBranchMapper(); }
+  // BMM void PoolOutputModule::writeBranchMapper() { rootOutputFile_->writeBranchMapper(); }
   void PoolOutputModule::finishEndFile() { rootOutputFile_->finishEndFile(); rootOutputFile_.reset(); }
   bool PoolOutputModule::isFileOpen() const { return rootOutputFile_.get() != 0; }
 

@@ -3,8 +3,6 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// $Id: RootOutputFile.h,v 1.29.2.3 2008/04/29 07:58:12 wmtan Exp $
-//
 // Class RootOutputFile
 //
 // Oringinal Author: Luca Lista
@@ -46,7 +44,7 @@ namespace edm {
     //void endFile();
     void writeLuminosityBlock(LuminosityBlockPrincipal const& lb);
     bool writeRun(RunPrincipal const& r);
-    void writeBranchMapper();
+    //BMM void writeBranchMapper();
     void writeEntryDescriptions();
     void writeFileFormatVersion();
     void writeFileIdentifier();
@@ -77,21 +75,17 @@ namespace edm {
         std::map<std::string, int> treeMap_;
       };
       OutputItem() : branchDescription_(0),
-	branchEntryInfoSharedPtr_(new BranchEntryInfo),
-	branchEntryInfoPtr_(branchEntryInfoSharedPtr_.get()),
 	selected_(false), renamed_(false), product_(0) {}
       OutputItem(BranchDescription const* bd, bool sel, bool ren) :
 	branchDescription_(bd),
-	branchEntryInfoSharedPtr_(new BranchEntryInfo),
-	branchEntryInfoPtr_(branchEntryInfoSharedPtr_.get()),
 	selected_(sel), renamed_(ren), product_(0) {}
       ~OutputItem() {}
+
       BranchDescription const* branchDescription_;
-      boost::shared_ptr<BranchEntryInfo> branchEntryInfoSharedPtr_;
-      mutable BranchEntryInfo * branchEntryInfoPtr_;
       bool selected_;
       bool renamed_;
       mutable void const* product_;
+
       bool operator <(OutputItem const& rh) const {
         return *branchDescription_ < *rh.branchDescription_;
       }
@@ -101,9 +95,9 @@ namespace edm {
     void fillItemList(Selections const& keptVector,
 		      Selections const& droppedVector,
 		      OutputItemList & outputItemList,
-		      TTree *meta);
+		      TTree *theTree);
 
-    void fillBranches(BranchType const& branchType, Principal const& principal) const;
+    void fillBranches(BranchType const& branchType, Principal const& principal);
 
     void addEntryDescription(EntryDescription const& desc);
 
@@ -122,12 +116,13 @@ namespace edm {
     FileIndex::EntryNumber_t lumiEntryNumber_;
     FileIndex::EntryNumber_t runEntryNumber_;
     TTree * metaDataTree_;
-    TTree * branchMapperTree_;
+    //BMM TTree * branchMapperTree_;
     TTree * entryDescriptionTree_;
     TTree * eventHistoryTree_;
     EventAuxiliary const*           pEventAux_;
     LuminosityBlockAuxiliary const* pLumiAux_;
     RunAuxiliary const*             pRunAux_;
+    BranchEntryInfoVector           branchEntryInfoVector_;
     BranchEntryInfoVector const*    pBranchEntryInfoVector_;
     History const*                  pHistory_;
     RootOutputTree eventTree_;

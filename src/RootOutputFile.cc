@@ -1,4 +1,3 @@
-// $Id: RootOutputFile.cc,v 1.53.2.6 2008/05/02 06:15:17 wmtan Exp $
 
 #include "RootOutputFile.h"
 #include "PoolOutputModule.h"
@@ -6,8 +5,9 @@
 #include "FWCore/Utilities/interface/GlobalIdentifier.h"
 
 #include "DataFormats/Provenance/interface/EventAuxiliary.h" 
+#include "DataFormats/Provenance/interface/LuminosityBlockAuxiliary.h" 
+#include "DataFormats/Provenance/interface/RunAuxiliary.h" 
 #include "DataFormats/Provenance/interface/FileFormatVersion.h"
-#include "DataFormats/Provenance/interface/FileIndex.h"
 #include "FWCore/Utilities/interface/GetFileFormatVersion.h"
 #include "FWCore/Utilities/interface/EDMException.h"
 #include "FWCore/Utilities/interface/Algorithms.h"
@@ -17,16 +17,19 @@
 #include "FWCore/Framework/interface/LuminosityBlockPrincipal.h"
 #include "FWCore/Framework/interface/RunPrincipal.h"
 #include "DataFormats/Provenance/interface/BranchID.h"
-#include "DataFormats/Provenance/interface/BranchMapper.h"
-#include "DataFormats/Provenance/interface/BranchMapperRegistry.h"
+// BMM #include "DataFormats/Provenance/interface/BranchMapper.h"
+// BMM #include "DataFormats/Provenance/interface/BranchMapperRegistry.h"
 #include "DataFormats/Provenance/interface/EntryDescription.h"
 #include "DataFormats/Provenance/interface/EntryDescriptionRegistry.h"
+#include "DataFormats/Provenance/interface/EventID.h"
 #include "DataFormats/Provenance/interface/History.h"
 #include "DataFormats/Provenance/interface/ModuleDescriptionRegistry.h"
 #include "DataFormats/Provenance/interface/ParameterSetBlob.h"
+#include "DataFormats/Provenance/interface/ParameterSetID.h"
 #include "DataFormats/Provenance/interface/ProcessHistoryRegistry.h"
+#include "DataFormats/Provenance/interface/ProcessHistoryID.h"
 #include "DataFormats/Provenance/interface/ProductRegistry.h"
-#include "DataFormats/Provenance/interface/Provenance.h"
+#include "DataFormats/Provenance/interface/ProductStatus.h"
 #include "DataFormats/Common/interface/BasicHandle.h"
 #include "FWCore/Framework/interface/ConstProductRegistry.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -41,8 +44,6 @@
 #include "TClass.h"
 #include "Rtypes.h"
 
-#include <algorithm>
-#include <map>
 #include <iomanip>
 #include <sstream>
 
@@ -111,12 +112,14 @@ namespace edm {
       lumiEntryNumber_(0LL),
       runEntryNumber_(0LL),
       metaDataTree_(0),
-      branchMapperTree_(0),
+      // BMM branchMapperTree_(0),
       entryDescriptionTree_(0),
       eventHistoryTree_(0),
       pEventAux_(0),
       pLumiAux_(0),
       pRunAux_(0),
+      branchEntryInfoVector_(),
+      pBranchEntryInfoVector_(&branchEntryInfoVector_),
       pHistory_(0),
       eventTree_(filePtr_, InEvent, pEventAux_, pBranchEntryInfoVector_,
                  om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
@@ -153,7 +156,7 @@ namespace edm {
     }
     // Don't split metadata tree or event description tree
     metaDataTree_         = RootOutputTree::makeTTree(filePtr_.get(), poolNames::metaDataTreeName(), 0);
-    branchMapperTree_     = RootOutputTree::makeTTree(filePtr_.get(), poolNames::branchMapperTreeName(), 0);
+    // BMM branchMapperTree_     = RootOutputTree::makeTTree(filePtr_.get(), poolNames::branchMapperTreeName(), 0);
     entryDescriptionTree_ = RootOutputTree::makeTTree(filePtr_.get(), poolNames::entryDescriptionTreeName(), 0);
 
     // Create the tree that will carry (event) History objects.
@@ -323,6 +326,7 @@ namespace edm {
     return newFileAtEndOfRun_;
   }
 
+  /* BMM
   void RootOutputFile::writeBranchMapper() {
     BranchMapperID const* hash(0);
     BranchMapper const*   desc(0);
@@ -348,6 +352,7 @@ namespace edm {
 	branchMapperTree_->Fill();
       }
   }
+  */
 
   void RootOutputFile::writeEntryDescriptions() {
     EntryDescriptionID const* hash(0);
@@ -446,7 +451,7 @@ namespace edm {
     metaDataTree_->SetEntries(-1);
     RootOutputTree::writeTTree(metaDataTree_);
 
-    RootOutputTree::writeTTree(branchMapperTree_);
+    // BMM RootOutputTree::writeTTree(branchMapperTree_);
 
     RootOutputTree::writeTTree(entryDescriptionTree_);
 
@@ -469,7 +474,9 @@ namespace edm {
 
   }
 
-  void RootOutputFile::RootOutputFile::fillBranches(BranchType const& branchType, Principal const& principal) const {
+  void RootOutputFile::RootOutputFile::fillBranches(BranchType const& branchType, Principal const& principal) {
+
+    branchEntryInfoVector_.clear();
 
     bool const fastCloning = (branchType == InEvent) && currentlyFastCloning_;
     
@@ -490,12 +497,10 @@ namespace edm {
 	if (i->branchDescription_->produced()) {
 	  boost::shared_ptr<EntryDescription> edPtr(new EntryDescription);
 	  edPtr->moduleDescriptionID_ = i->branchDescription_->moduleDescriptionID();
-	  EntryDescriptionRegistry::instance()->insertMapped(*edPtr);
-	  i->branchEntryInfoPtr_ =
-	     new BranchEntryInfo(i->branchDescription_->branchID(),
-			         i->branchDescription_->productIDtoAssign(),
-				 productstatus::neverCreated(),
-				 edPtr);
+          branchEntryInfoVector_.push_back(BranchEntryInfo(i->branchDescription_->branchID(),
+                                                           i->branchDescription_->productIDtoAssign(),
+                                                           productstatus::neverCreated(),
+                                                           edPtr));
 	} else {
 	  throw edm::Exception(errors::ProductNotFound,"NoMatch")
 	    << "PoolOutputModule: Unexpected internal error.  Contact the framework group.\n"
@@ -503,7 +508,7 @@ namespace edm {
 	}
       } else {
 	product = bh.wrapper();
-	*i->branchEntryInfoPtr_ = bh.provenance()->branchEntryInfo();
+        branchEntryInfoVector_.push_back(bh.provenance()->branchEntryInfo());
       }
       if (getProd) {
 	if (product == 0) {

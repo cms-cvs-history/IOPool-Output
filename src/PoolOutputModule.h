@@ -3,8 +3,6 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// $Id: PoolOutputModule.h,v 1.47.2.1 2008/04/25 19:20:24 wmtan Exp $
-//
 // Class PoolOutputModule. Output module to POOL file
 //
 // Oringinal Author: Luca Lista
@@ -12,18 +10,15 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include <memory>
 #include <string>
-#include <iosfwd>
 #include "boost/scoped_ptr.hpp"
-#include "boost/utility.hpp"
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/OutputModule.h"
-#include "IOPool/Output/src/RootOutputFile.h"
 
 namespace edm {
   class ParameterSet;
+  class RootOutputFile;
 
   class PoolOutputModule : public OutputModule {
   public:
@@ -62,7 +57,7 @@ namespace edm {
     virtual void writeParameterSetRegistry();
     virtual void writeProductDescriptionRegistry();
     virtual void writeEntryDescriptions();
-    virtual void writeBranchMapper();
+    // BMM virtual void writeBranchMapper();
     virtual void finishEndFile();
 
     std::string const fileName_;

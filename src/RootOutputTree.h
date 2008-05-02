@@ -5,8 +5,6 @@
 
 RootOutputTree.h // used by ROOT output modules
 
-$Id: RootOutputTree.h,v 1.28.2.2 2008/04/29 07:58:12 wmtan Exp $
-
 ----------------------------------------------------------------------*/
 
 #include <string>
