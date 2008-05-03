@@ -476,8 +476,6 @@ namespace edm {
 
   void RootOutputFile::RootOutputFile::fillBranches(BranchType const& branchType, Principal const& principal) {
 
-    branchEntryInfoVector_.clear();
-
     bool const fastCloning = (branchType == InEvent) && currentlyFastCloning_;
     
     OutputItemList const& items = outputItemList_[branchType];
@@ -521,6 +519,7 @@ namespace edm {
       }
     }
     treePointers_[branchType]->fillTree();
+    branchEntryInfoVector_.clear();
   }
 
   void
