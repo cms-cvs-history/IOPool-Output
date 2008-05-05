@@ -518,6 +518,7 @@ namespace edm {
 	i->product_ = product;
       }
     }
+    edm::sort_all(branchEntryInfoVector_);
     treePointers_[branchType]->fillTree();
     branchEntryInfoVector_.clear();
   }
