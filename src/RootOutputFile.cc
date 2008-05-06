@@ -287,7 +287,7 @@ namespace edm {
     // Store an invailid process history ID in EventAuxiliary for obsolete field.
     pEventAux_->processHistoryID_ = ProcessHistoryID();
 
-    fillBranches(InEvent, e.groupGetter());
+    fillBranches(InEvent, e);
 
     // Report event written 
     Service<JobReport> reportSvc;
@@ -313,7 +313,7 @@ namespace edm {
     // Add lumi to index.
     fileIndex_.addEntry(pLumiAux_->run(), pLumiAux_->luminosityBlock(), 0U, lumiEntryNumber_);
     ++lumiEntryNumber_;
-    fillBranches(InLumi, lb.groupGetter());
+    fillBranches(InLumi, lb);
   }
 
   bool RootOutputFile::writeRun(RunPrincipal const& r) {
@@ -322,7 +322,7 @@ namespace edm {
     // Add run to index.
     fileIndex_.addEntry(pRunAux_->run(), 0U, 0U, runEntryNumber_);
     ++runEntryNumber_;
-    fillBranches(InRun, r.groupGetter());
+    fillBranches(InRun, r);
     return newFileAtEndOfRun_;
   }
 
@@ -381,7 +381,7 @@ namespace edm {
   }
 
   void RootOutputFile::writeFileFormatVersion() {
-    FileFormatVersion fileFormatVersion(edm::getFileFormatVersion());
+    FileFormatVersion fileFormatVersion(getFileFormatVersion());
     FileFormatVersion * pFileFmtVsn = &fileFormatVersion;
     TBranch* b = metaDataTree_->Branch(poolNames::fileFormatVersionBranchName().c_str(), &pFileFmtVsn, om_->basketSize(), 0);
     assert(b);
@@ -518,7 +518,7 @@ namespace edm {
 	i->product_ = product;
       }
     }
-    edm::sort_all(branchEntryInfoVector_);
+    sort_all(branchEntryInfoVector_);
     treePointers_[branchType]->fillTree();
     branchEntryInfoVector_.clear();
   }
