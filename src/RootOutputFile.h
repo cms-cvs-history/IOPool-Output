@@ -24,11 +24,13 @@
 #include "DataFormats/Provenance/interface/FileID.h"
 #include "DataFormats/Provenance/interface/FileIndex.h"
 #include "DataFormats/Provenance/interface/Selections.h"
+#include "DataFormats/Provenance/interface/EventEntryInfo.h"
+#include "DataFormats/Provenance/interface/RunLumiEntryInfo.h"
 #include "IOPool/Output/src/RootOutputTree.h"
-#include "DataFormats/Provenance/interface/BranchEntryInfo.h"
 
 class TTree;
 class TFile;
+#include "TROOT.h"
 
 namespace edm {
   class PoolOutputModule;
@@ -97,7 +99,8 @@ namespace edm {
 		      OutputItemList & outputItemList,
 		      TTree *theTree);
 
-    void fillBranches(BranchType const& branchType, Principal const& principal);
+    template <typename T>
+    void fillBranches(BranchType const& branchType, Principal<T> const& principal, std::vector<T> * entryInfoVecPtr);
 
     void addEntryDescription(EntryDescription const& desc);
 
@@ -122,8 +125,12 @@ namespace edm {
     EventAuxiliary const*           pEventAux_;
     LuminosityBlockAuxiliary const* pLumiAux_;
     RunAuxiliary const*             pRunAux_;
-    BranchEntryInfoVector           branchEntryInfoVector_;
-    BranchEntryInfoVector const*    pBranchEntryInfoVector_;
+    EventEntryInfoVector            eventEntryInfoVector_;
+    LumiEntryInfoVector	            lumiEntryInfoVector_;
+    RunEntryInfoVector              runEntryInfoVector_;
+    EventEntryInfoVector *          pEventEntryInfoVector_;
+    LumiEntryInfoVector *           pLumiEntryInfoVector_;
+    RunEntryInfoVector *            pRunEntryInfoVector_;
     History const*                  pHistory_;
     RootOutputTree eventTree_;
     RootOutputTree lumiTree_;
@@ -132,6 +139,57 @@ namespace edm {
     mutable bool newFileAtEndOfRun_;
     bool dataTypeReported_;
   };
+
+  template <typename T>
+  void RootOutputFile::fillBranches(
+		BranchType const& branchType,
+		Principal<T> const& principal,
+		std::vector<T> * entryInfoVecPtr) {
+
+    bool const fastCloning = (branchType == InEvent) && currentlyFastCloning_;
+    
+    OutputItemList const& items = outputItemList_[branchType];
+
+    // Loop over EDProduct branches, fill the provenance, and write the branch.
+    for (OutputItemList::const_iterator i = items.begin(), iEnd = items.end(); i != iEnd; ++i) {
+
+      BranchID const& id = i->branchDescription_->branchID();
+
+      bool getProd = i->selected_ && (i->branchDescription_->produced() || i->renamed_ || !fastCloning);
+
+      EDProduct const* product = 0;
+      OutputHandle<T> const oh = principal.getForOutput(id, getProd);
+      if (!oh.entryInfo()) {
+	// No product with this ID is in the event.
+	// Create and write the provenance.
+	if (i->branchDescription_->produced()) {
+          entryInfoVecPtr->push_back(T(i->branchDescription_->branchID(),
+			      productstatus::neverCreated(),
+			      i->branchDescription_->moduleDescriptionID()));
+	} else {
+	  throw edm::Exception(errors::ProductNotFound,"NoMatch")
+	    << "PoolOutputModule: Unexpected internal error.  Contact the framework group.\n"
+	    << "No group for branch" << i->branchDescription_->branchName() << '\n';
+	}
+      } else {
+	product = oh.wrapper();
+        entryInfoVecPtr->push_back(*oh.entryInfo());
+      }
+      if (getProd) {
+	if (product == 0) {
+	  // No product with this ID is in the event.
+	  // Add a null product.
+	  TClass *cp = gROOT->GetClass(i->branchDescription_->wrappedName().c_str());
+	  product = static_cast<EDProduct *>(cp->New());
+	}
+	i->product_ = product;
+      }
+    }
+    sort_all(*entryInfoVecPtr);
+    treePointers_[branchType]->fillTree();
+    entryInfoVecPtr->clear();
+  }
+
 }
 
 #endif

@@ -13,7 +13,9 @@ RootOutputTree.h // used by ROOT output modules
 #include "boost/shared_ptr.hpp"
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "DataFormats/Provenance/interface/BranchEntryInfo.h"
+#include "FWCore/Framework/interface/EventPrincipal.h"
+#include "FWCore/Framework/interface/LuminosityBlockPrincipal.h"
+#include "FWCore/Framework/interface/RunPrincipal.h"
 #include "DataFormats/Provenance/interface/BranchType.h"
 
 #include "TTree.h"
@@ -27,10 +29,11 @@ namespace edm {
   public:
     // Constructor for trees with no fast cloning
     template <typename T>
-    RootOutputTree(boost::shared_ptr<TFile> filePtr,
+    RootOutputTree(T* , // first argument is a dummy so that the compiiler can resolve the match.
+		   boost::shared_ptr<TFile> filePtr,
 		   BranchType const& branchType,
-		   T const*& pAux,
-		   BranchEntryInfoVector const*& pBranchEntryInfoVector,
+		   typename T::Auxiliary const*& pAux,
+		   typename T::EntryInfoVector *& pEntryInfoVector,
 		   int bufSize,
 		   int splitLevel,
                    int treeMaxVirtualSize) :
@@ -50,7 +53,7 @@ namespace edm {
       clonedBranches_.push_back(auxBranch_);  
 
       branchEntryInfoBranch_ = metaTree_->Branch(BranchTypeToBranchEntryInfoBranchName(branchType).c_str(),
-                                                 &pBranchEntryInfoVector, bufSize, 0);
+                                                 &pEntryInfoVector, bufSize, 0);
       metaBranches_.push_back(branchEntryInfoBranch_);
   }
 

@@ -1,6 +1,6 @@
 
-#include "RootOutputFile.h"
-#include "PoolOutputModule.h"
+#include "IOPool/Output/src/RootOutputFile.h"
+#include "IOPool/Output/src/PoolOutputModule.h"
 
 #include "FWCore/Utilities/interface/GlobalIdentifier.h"
 
@@ -46,6 +46,7 @@
 
 #include <iomanip>
 #include <sstream>
+
 
 namespace edm {
 
@@ -118,14 +119,21 @@ namespace edm {
       pEventAux_(0),
       pLumiAux_(0),
       pRunAux_(0),
-      branchEntryInfoVector_(),
-      pBranchEntryInfoVector_(&branchEntryInfoVector_),
+      eventEntryInfoVector_(),
+      lumiEntryInfoVector_(),
+      runEntryInfoVector_(),
+      pEventEntryInfoVector_(&eventEntryInfoVector_),
+      pLumiEntryInfoVector_(&lumiEntryInfoVector_),
+      pRunEntryInfoVector_(&runEntryInfoVector_),
       pHistory_(0),
-      eventTree_(filePtr_, InEvent, pEventAux_, pBranchEntryInfoVector_,
+      eventTree_(static_cast<EventPrincipal *>(0),
+                 filePtr_, InEvent, pEventAux_, pEventEntryInfoVector_,
                  om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
-      lumiTree_(filePtr_, InLumi, pLumiAux_, pBranchEntryInfoVector_,
+      lumiTree_(static_cast<LuminosityBlockPrincipal *>(0),
+                filePtr_, InLumi, pLumiAux_, pLumiEntryInfoVector_,
                 om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
-      runTree_(filePtr_, InRun, pRunAux_, pBranchEntryInfoVector_,
+      runTree_(static_cast<RunPrincipal *>(0),
+               filePtr_, InRun, pRunAux_, pRunEntryInfoVector_,
                om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
       treePointers_(),
       newFileAtEndOfRun_(false), 
@@ -287,7 +295,7 @@ namespace edm {
     // Store an invailid process history ID in EventAuxiliary for obsolete field.
     pEventAux_->processHistoryID_ = ProcessHistoryID();
 
-    fillBranches(InEvent, e);
+    fillBranches(InEvent, e, pEventEntryInfoVector_);
 
     // Report event written 
     Service<JobReport> reportSvc;
@@ -313,7 +321,7 @@ namespace edm {
     // Add lumi to index.
     fileIndex_.addEntry(pLumiAux_->run(), pLumiAux_->luminosityBlock(), 0U, lumiEntryNumber_);
     ++lumiEntryNumber_;
-    fillBranches(InLumi, lb);
+    fillBranches(InLumi, lb, pLumiEntryInfoVector_);
   }
 
   bool RootOutputFile::writeRun(RunPrincipal const& r) {
@@ -322,7 +330,7 @@ namespace edm {
     // Add run to index.
     fileIndex_.addEntry(pRunAux_->run(), 0U, 0U, runEntryNumber_);
     ++runEntryNumber_;
-    fillBranches(InRun, r);
+    fillBranches(InRun, r, pRunEntryInfoVector_);
     return newFileAtEndOfRun_;
   }
 
@@ -472,55 +480,6 @@ namespace edm {
     Service<JobReport> reportSvc;
     reportSvc->outputFileClosed(reportToken_);
 
-  }
-
-  void RootOutputFile::RootOutputFile::fillBranches(BranchType const& branchType, Principal const& principal) {
-
-    bool const fastCloning = (branchType == InEvent) && currentlyFastCloning_;
-    
-    OutputItemList const& items = outputItemList_[branchType];
-
-    // Loop over EDProduct branches, fill the provenance, and write the branch.
-    for (OutputItemList::const_iterator i = items.begin(), iEnd = items.end(); i != iEnd; ++i) {
-
-      BranchID const& id = i->branchDescription_->branchID();
-
-      bool getProd = i->selected_ && (i->branchDescription_->produced() || i->renamed_ || !fastCloning);
-
-      EDProduct const* product = 0;
-      BasicHandle const bh = principal.getForOutput(id, getProd);
-      if (bh.provenance() == 0) {
-	// No product with this ID is in the event.
-	// Create and write the provenance.
-	if (i->branchDescription_->produced()) {
-	  boost::shared_ptr<EntryDescription> edPtr(new EntryDescription);
-	  edPtr->moduleDescriptionID_ = i->branchDescription_->moduleDescriptionID();
-          branchEntryInfoVector_.push_back(BranchEntryInfo(i->branchDescription_->branchID(),
-                                                           i->branchDescription_->productIDtoAssign(),
-                                                           productstatus::neverCreated(),
-                                                           edPtr));
-	} else {
-	  throw edm::Exception(errors::ProductNotFound,"NoMatch")
-	    << "PoolOutputModule: Unexpected internal error.  Contact the framework group.\n"
-	    << "No group for branch" << i->branchDescription_->branchName() << '\n';
-	}
-      } else {
-	product = bh.wrapper();
-        branchEntryInfoVector_.push_back(bh.provenance()->branchEntryInfo());
-      }
-      if (getProd) {
-	if (product == 0) {
-	  // No product with this ID is in the event.
-	  // Add a null product.
-	  TClass *cp = gROOT->GetClass(i->branchDescription_->wrappedName().c_str());
-	  product = static_cast<EDProduct *>(cp->New());
-	}
-	i->product_ = product;
-      }
-    }
-    sort_all(branchEntryInfoVector_);
-    treePointers_[branchType]->fillTree();
-    branchEntryInfoVector_.clear();
   }
 
   void
