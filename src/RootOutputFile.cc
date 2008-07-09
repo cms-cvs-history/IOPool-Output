@@ -1,4 +1,4 @@
-// $Id: RootOutputFile.cc,v 1.52 2008/04/04 17:53:18 wmtan Exp $
+// $Id: RootOutputFile.cc,v 1.53 2008/04/16 22:02:33 wdd Exp $
 
 #include "RootOutputFile.h"
 #include "PoolOutputModule.h"
@@ -444,6 +444,8 @@ namespace edm {
 
   void RootOutputFile::RootOutputFile::fillBranches(BranchType const& branchType, Principal const& principal) const {
 
+    std::vector<boost::shared_ptr<EDProduct> > dummies;
+
     bool const fastCloning = (branchType == InEvent) && currentlyFastCloning_;
     bool const fastMetaCloning = (branchType == InEvent) && currentlyFastMetaCloning_;
     
@@ -487,7 +489,9 @@ namespace edm {
 	  // No product with this ID is in the event.
 	  // Add a null product.
 	  TClass *cp = gROOT->GetClass(i->branchDescription_->wrappedName().c_str());
-	  product = static_cast<EDProduct *>(cp->New());
+	  boost::shared_ptr<EDProduct> dummy(static_cast<EDProduct *>(cp->New()));
+	  dummies.push_back(dummy);
+	  product = dummy.get();
 	}
 	i->product_ = product;
       }
