@@ -200,7 +200,7 @@ namespace edm {
     pEventAux_ = &e.aux();
    
     // Store an invailid process history ID in EventAuxiliary for obsolete field.
-    pEventAux_->processHistoryID_ = ProcessHistoryID();
+    pEventAux_->processHistoryID_ = ProcessHistoryID(); // backward compatibility
     
     // Because getting the data may cause an exception to be thrown we want to do that
     // first before writing anything to the file about this event
@@ -211,9 +211,6 @@ namespace edm {
     // History branch
     History historyForOutput(e.history());
     historyForOutput.addEntry(om_->selectorConfig());
-    //NOTE: EventPrincipal::processHistoryID has the real value since we just injected a dummy
-    // value for processHistoryID into the EventAuxilliary
-    historyForOutput.setProcessHistoryID(e.processHistoryID());
     pHistory_ = &historyForOutput;
     int sz = eventHistoryTree_->Fill();
     if ( sz <= 0)
@@ -344,7 +341,7 @@ namespace edm {
     // Make a local copy of the ProductRegistry, removing any transient or pruned products.
     typedef ProductRegistry::ProductList ProductList;
     edm::Service<edm::ConstProductRegistry> reg;
-    ProductRegistry pReg(reg->productList(), reg->nextID());
+    ProductRegistry pReg(reg->productList(), reg->branchIDListVector());
     ProductList & pList  = const_cast<ProductList &>(pReg.productList());
     std::set<BranchID>::iterator end = branchesWithStoredHistory_.end();
     for (ProductList::iterator it = pList.begin(); it != pList.end(); ) {
