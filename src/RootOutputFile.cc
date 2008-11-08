@@ -17,6 +17,7 @@
 #include "FWCore/Framework/interface/RunPrincipal.h"
 #include "DataFormats/Provenance/interface/BranchChildren.h"
 #include "DataFormats/Provenance/interface/BranchID.h"
+#include "DataFormats/Provenance/interface/BranchIDList.h"
 #include "DataFormats/Provenance/interface/EventEntryDescription.h"
 #include "DataFormats/Provenance/interface/EntryDescriptionRegistry.h"
 #include "DataFormats/Provenance/interface/EventID.h"
@@ -29,6 +30,7 @@
 #include "DataFormats/Provenance/interface/ProductRegistry.h"
 #include "DataFormats/Provenance/interface/ProductStatus.h"
 #include "DataFormats/Common/interface/BasicHandle.h"
+#include "DataFormats/Provenance/interface/BranchIDListRegistry.h"
 #include "FWCore/Framework/interface/ConstProductRegistry.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/Registry.h"
@@ -314,15 +316,22 @@ namespace edm {
   }
 
   void RootOutputFile::writeProcessHistoryRegistry() { 
-    ProcessHistoryMap *pProcHistMap = &ProcessHistoryRegistry::instance()->data();
-    TBranch* b = metaDataTree_->Branch(poolNames::processHistoryMapBranchName().c_str(), &pProcHistMap, om_->basketSize(), 0);
+    ProcessHistoryRegistry::collection_type *p = &ProcessHistoryRegistry::instance()->data();
+    TBranch* b = metaDataTree_->Branch(poolNames::processHistoryBranchName().c_str(), &p, om_->basketSize(), 0);
     assert(b);
     b->Fill();
   }
 
   void RootOutputFile::writeModuleDescriptionRegistry() { 
-    ModuleDescriptionMap *pModDescMap = &ModuleDescriptionRegistry::instance()->data();
-    TBranch* b = metaDataTree_->Branch(poolNames::moduleDescriptionMapBranchName().c_str(), &pModDescMap, om_->basketSize(), 0);
+    ModuleDescriptionRegistry::collection_type *p = &ModuleDescriptionRegistry::instance()->data();
+    TBranch* b = metaDataTree_->Branch(poolNames::moduleDescriptionBranchName().c_str(), &p, om_->basketSize(), 0);
+    assert(b);
+    b->Fill();
+  }
+
+  void RootOutputFile::writeBranchIDListRegistry() { 
+    BranchIDListRegistry::collection_type *p = &BranchIDListRegistry::instance()->data();
+    TBranch* b = metaDataTree_->Branch(poolNames::branchIDListBranchName().c_str(), &p, om_->basketSize(), 0);
     assert(b);
     b->Fill();
   }
@@ -332,7 +341,7 @@ namespace edm {
     ParameterSetMap psetMap;
     pset::fill(pset::Registry::instance(), psetMap);
     ParameterSetMap *pPsetMap = &psetMap;
-    TBranch* b = metaDataTree_->Branch(poolNames::parameterSetMapBranchName().c_str(), &pPsetMap, om_->basketSize(), 0);
+    TBranch* b = metaDataTree_->Branch(poolNames::parameterSetBranchName().c_str(), &pPsetMap, om_->basketSize(), 0);
     assert(b);
     b->Fill();
   }
@@ -341,7 +350,7 @@ namespace edm {
     // Make a local copy of the ProductRegistry, removing any transient or pruned products.
     typedef ProductRegistry::ProductList ProductList;
     edm::Service<edm::ConstProductRegistry> reg;
-    ProductRegistry pReg(reg->productList(), reg->branchIDListVector());
+    ProductRegistry pReg(reg->productList());
     ProductList & pList  = const_cast<ProductList &>(pReg.productList());
     std::set<BranchID>::iterator end = branchesWithStoredHistory_.end();
     for (ProductList::iterator it = pList.begin(); it != pList.end(); ) {

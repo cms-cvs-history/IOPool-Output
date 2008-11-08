@@ -60,6 +60,7 @@ namespace edm {
     void writeModuleDescriptionRegistry();
     void writeParameterSetRegistry();
     void writeProductDescriptionRegistry();
+    void writeBranchIDListRegistry();
     void writeProductDependencies();
 
     void finishEndFile();
