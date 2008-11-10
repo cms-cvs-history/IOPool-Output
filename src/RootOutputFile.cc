@@ -317,7 +317,7 @@ namespace edm {
 
   void RootOutputFile::writeProcessHistoryRegistry() { 
     ProcessHistoryRegistry::collection_type *p = &ProcessHistoryRegistry::instance()->data();
-    TBranch* b = metaDataTree_->Branch(poolNames::processHistoryBranchName().c_str(), &p, om_->basketSize(), 0);
+    TBranch* b = metaDataTree_->Branch(poolNames::processHistoryMapBranchName().c_str(), &p, om_->basketSize(), 0);
     assert(b);
     b->Fill();
   }
@@ -341,7 +341,7 @@ namespace edm {
     ParameterSetMap psetMap;
     pset::fill(pset::Registry::instance(), psetMap);
     ParameterSetMap *pPsetMap = &psetMap;
-    TBranch* b = metaDataTree_->Branch(poolNames::parameterSetBranchName().c_str(), &pPsetMap, om_->basketSize(), 0);
+    TBranch* b = metaDataTree_->Branch(poolNames::parameterSetMapBranchName().c_str(), &pPsetMap, om_->basketSize(), 0);
     assert(b);
     b->Fill();
   }
