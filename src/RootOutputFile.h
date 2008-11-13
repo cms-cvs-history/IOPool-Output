@@ -25,7 +25,7 @@
 #include "DataFormats/Provenance/interface/FileID.h"
 #include "DataFormats/Provenance/interface/FileIndex.h"
 #include "DataFormats/Provenance/interface/Selections.h"
-#include "DataFormats/Provenance/interface/EventEntryInfo.h"
+#include "DataFormats/Provenance/interface/ProductProvenance.h"
 #include "DataFormats/Provenance/interface/RunLumiEntryInfo.h"
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "IOPool/Output/src/RootOutputTree.h"
@@ -73,7 +73,7 @@ namespace edm {
     //-------------------------------
     // Local types
     //
-    typedef EventEntryInfo::EntryInfoVector EventEntryInfoVector;
+    typedef ProductProvenance::EntryInfoVector ProductProvenanceVector;
     typedef LumiEntryInfo::EntryInfoVector LumiEntryInfoVector;
     typedef RunEntryInfo::EntryInfoVector RunEntryInfoVector;
 
@@ -83,16 +83,16 @@ namespace edm {
     void setBranchAliases(TTree *tree, Selections const& branches) const;
 
     template <typename T>
-    void fillBranches(BranchType const& branchType, Principal const& principal, std::vector<T> * entryInfoVecPtr);
+    void fillBranches(BranchType const& branchType, Principal const& principal, std::vector<T> * productProvenanceVecPtr);
 
      template <typename T>
      static void insertAncestors(const T& iParents,
                           const BranchMapper& iMapper,
                           std::set<T>& oToFill);
 
-     void insertAncestors(const EventEntryInfo& iGetParents,
+     void insertAncestors(const ProductProvenance& iGetParents,
                           const BranchMapper& iMapper,
-                          std::set<EventEntryInfo>& oToFill);
+                          std::set<ProductProvenance>& oToFill);
         
     //-------------------------------
     // Member data
@@ -114,10 +114,10 @@ namespace edm {
     EventAuxiliary const*           pEventAux_;
     LuminosityBlockAuxiliary const* pLumiAux_;
     RunAuxiliary const*             pRunAux_;
-    EventEntryInfoVector            eventEntryInfoVector_;
+    ProductProvenanceVector            eventEntryInfoVector_;
     LumiEntryInfoVector	            lumiEntryInfoVector_;
     RunEntryInfoVector              runEntryInfoVector_;
-    EventEntryInfoVector *          pEventEntryInfoVector_;
+    ProductProvenanceVector *          pProductProvenanceVector_;
     LumiEntryInfoVector *           pLumiEntryInfoVector_;
     RunEntryInfoVector *            pRunEntryInfoVector_;
     History const*                  pHistory_;
@@ -143,7 +143,7 @@ namespace edm {
   void RootOutputFile::fillBranches(
 		BranchType const& branchType,
 		Principal const& principal,
-		std::vector<T> * entryInfoVecPtr) {
+		std::vector<T> * productProvenanceVecPtr) {
 
     std::vector<boost::shared_ptr<EDProduct> > dummies;
 
@@ -166,7 +166,7 @@ namespace edm {
 
       EDProduct const* product = 0;
       OutputHandle<T> const oh = principal.getForOutput<T>(id, getProd);
-      if (!oh.entryInfo()) {
+      if (!oh.productProvenance()) {
 	// No product with this ID is in the event.
 	// Create and write the provenance.
 	if (i->branchDescription_->produced()) {
@@ -186,10 +186,10 @@ namespace edm {
 	}
       } else {
 	product = oh.wrapper();
-        keep.insert(*oh.entryInfo());
-        keepPlusAncestors.insert(*oh.entryInfo());
+        keep.insert(*oh.productProvenance());
+        keepPlusAncestors.insert(*oh.productProvenance());
         assert(principal.branchMapperPtr());
-        insertAncestors(*oh.entryInfo(),*principal.branchMapperPtr(),keepPlusAncestors);
+        insertAncestors(*oh.productProvenance(),*principal.branchMapperPtr(),keepPlusAncestors);
       }
       if (getProd) {
 	if (product == 0) {
@@ -205,12 +205,12 @@ namespace edm {
     }
      
     if (om_->dropMetaData()) {
-      entryInfoVecPtr->assign(keep.begin(),keep.end());
+      productProvenanceVecPtr->assign(keep.begin(),keep.end());
     } else {
-      entryInfoVecPtr->assign(keepPlusAncestors.begin(),keepPlusAncestors.end());
+      productProvenanceVecPtr->assign(keepPlusAncestors.begin(),keepPlusAncestors.end());
     }
     treePointers_[branchType]->fillTree();
-    entryInfoVecPtr->clear();
+    productProvenanceVecPtr->clear();
   }
 
 }

@@ -86,12 +86,12 @@ namespace edm {
       eventEntryInfoVector_(),
       lumiEntryInfoVector_(),
       runEntryInfoVector_(),
-      pEventEntryInfoVector_(&eventEntryInfoVector_),
+      pProductProvenanceVector_(&eventEntryInfoVector_),
       pLumiEntryInfoVector_(&lumiEntryInfoVector_),
       pRunEntryInfoVector_(&runEntryInfoVector_),
       pHistory_(0),
       eventTree_(static_cast<EventPrincipal *>(0),
-                 filePtr_, InEvent, pEventAux_, pEventEntryInfoVector_,
+                 filePtr_, InEvent, pEventAux_, pProductProvenanceVector_,
                  om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
       lumiTree_(static_cast<LuminosityBlockPrincipal *>(0),
                 filePtr_, InLumi, pLumiAux_, pLumiEntryInfoVector_,
@@ -208,7 +208,7 @@ namespace edm {
     // first before writing anything to the file about this event
     // NOTE: pEventAux_ must be set before calling fillBranches since it gets written out
     // in that routine.
-    fillBranches(InEvent, e, pEventEntryInfoVector_);
+    fillBranches(InEvent, e, pProductProvenanceVector_);
      
     // History branch
     History historyForOutput(e.history());
@@ -424,14 +424,14 @@ namespace edm {
     }
   }
    
-   void RootOutputFile::insertAncestors(const EventEntryInfo& iGetParents,
+   void RootOutputFile::insertAncestors(const ProductProvenance& iGetParents,
                                         const BranchMapper& iMapper,
-                                        std::set<EventEntryInfo>& oToFill) {
+                                        std::set<ProductProvenance>& oToFill) {
       const std::vector<BranchID>& parentIDs = iGetParents.entryDescription().parents();
       for(std::vector<BranchID>::const_iterator it=parentIDs.begin(), itEnd = parentIDs.end();
           it != itEnd; ++it) {
          branchesWithStoredHistory_.insert(*it);
-         boost::shared_ptr<EventEntryInfo> info = iMapper.branchToEntryInfo(*it);
+         boost::shared_ptr<ProductProvenance> info = iMapper.branchToEntryInfo(*it);
          if(info) {
             if(oToFill.insert(*info).second) {
                //haven't seen this one yet
