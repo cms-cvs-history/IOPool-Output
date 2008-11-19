@@ -93,6 +93,7 @@ namespace edm {
     virtual void writeParameterSetRegistry();
     virtual void writeProductDescriptionRegistry();
     virtual void writeBranchIDListRegistry();
+    virtual void writeParameterSetIDListRegistry();
     virtual void writeProductDependencies();
     virtual void writeEntryDescriptions();
     virtual void finishEndFile();

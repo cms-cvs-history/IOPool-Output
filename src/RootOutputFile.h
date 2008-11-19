@@ -61,6 +61,7 @@ namespace edm {
     void writeParameterSetRegistry();
     void writeProductDescriptionRegistry();
     void writeBranchIDListRegistry();
+    void writeParameterSetIDListRegistry();
     void writeProductDependencies();
 
     void finishEndFile();
@@ -171,18 +172,14 @@ namespace edm {
 	// Create and write the provenance.
 	if (i->branchDescription_->produced()) {
           keep.insert(T(i->branchDescription_->branchID(),
-		      productstatus::neverCreated(),
-		      i->branchDescription_->moduleDescriptionID()));
+		      productstatus::neverCreated()));
           keepPlusAncestors.insert(T(i->branchDescription_->branchID(),
-			      productstatus::neverCreated(),
-			      i->branchDescription_->moduleDescriptionID()));
+			      productstatus::neverCreated()));
 	} else {
           keep.insert(T(i->branchDescription_->branchID(),
-		      productstatus::dropped(),
-		      i->branchDescription_->moduleDescriptionID()));
+		      productstatus::dropped()));
           keepPlusAncestors.insert(T(i->branchDescription_->branchID(),
-			      productstatus::dropped(),
-			      i->branchDescription_->moduleDescriptionID()));
+			      productstatus::dropped()));
 	}
       } else {
 	product = oh.wrapper();
