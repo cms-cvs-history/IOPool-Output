@@ -26,7 +26,6 @@
 #include "DataFormats/Provenance/interface/FileIndex.h"
 #include "DataFormats/Provenance/interface/Selections.h"
 #include "DataFormats/Provenance/interface/ProductProvenance.h"
-#include "DataFormats/Provenance/interface/RunLumiEntryInfo.h"
 #include "IOPool/Output/src/PoolOutputModule.h"
 #include "IOPool/Output/src/RootOutputTree.h"
 
@@ -50,16 +49,15 @@ namespace edm {
     //void endFile();
     void writeLuminosityBlock(LuminosityBlockPrincipal const& lb);
     void writeRun(RunPrincipal const& r);
-    void writeEntryDescriptions();
     void writeFileFormatVersion();
     void writeFileIdentifier();
     void writeFileIndex();
     void writeEventHistory();
     void writeProcessConfigurationRegistry();
     void writeProcessHistoryRegistry();
-    void writeModuleDescriptionRegistry();
     void writeParameterSetRegistry();
     void writeProductDescriptionRegistry();
+    void writeParentageRegistry();
     void writeBranchIDListRegistry();
     void writeParameterSetIDListRegistry();
     void writeProductDependencies();
@@ -74,9 +72,6 @@ namespace edm {
     //-------------------------------
     // Local types
     //
-    typedef ProductProvenance::EntryInfoVector ProductProvenanceVector;
-    typedef LumiEntryInfo::EntryInfoVector LumiEntryInfoVector;
-    typedef RunEntryInfo::EntryInfoVector RunEntryInfoVector;
 
     //-------------------------------
     // Private functions
@@ -110,17 +105,17 @@ namespace edm {
     FileIndex::EntryNumber_t lumiEntryNumber_;
     FileIndex::EntryNumber_t runEntryNumber_;
     TTree * metaDataTree_;
-    TTree * entryDescriptionTree_;
+    TTree * parentageTree_;
     TTree * eventHistoryTree_;
     EventAuxiliary const*           pEventAux_;
     LuminosityBlockAuxiliary const* pLumiAux_;
     RunAuxiliary const*             pRunAux_;
-    ProductProvenanceVector            eventEntryInfoVector_;
-    LumiEntryInfoVector	            lumiEntryInfoVector_;
-    RunEntryInfoVector              runEntryInfoVector_;
-    ProductProvenanceVector *          pProductProvenanceVector_;
-    LumiEntryInfoVector *           pLumiEntryInfoVector_;
-    RunEntryInfoVector *            pRunEntryInfoVector_;
+    ProductProvenanceVector         eventEntryInfoVector_;
+    ProductProvenanceVector	    lumiEntryInfoVector_;
+    ProductProvenanceVector         runEntryInfoVector_;
+    ProductProvenanceVector *       pEventEntryInfoVector_;
+    ProductProvenanceVector *       pLumiEntryInfoVector_;
+    ProductProvenanceVector *       pRunEntryInfoVector_;
     History const*                  pHistory_;
     RootOutputTree eventTree_;
     RootOutputTree lumiTree_;

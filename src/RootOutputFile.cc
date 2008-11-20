@@ -18,11 +18,10 @@
 #include "DataFormats/Provenance/interface/BranchChildren.h"
 #include "DataFormats/Provenance/interface/BranchID.h"
 #include "DataFormats/Provenance/interface/BranchIDList.h"
-#include "DataFormats/Provenance/interface/EventEntryDescription.h"
-#include "DataFormats/Provenance/interface/EntryDescriptionRegistry.h"
+#include "DataFormats/Provenance/interface/Parentage.h"
+#include "DataFormats/Provenance/interface/ParentageRegistry.h"
 #include "DataFormats/Provenance/interface/EventID.h"
 #include "DataFormats/Provenance/interface/History.h"
-#include "DataFormats/Provenance/interface/ModuleDescriptionRegistry.h"
 #include "DataFormats/Provenance/interface/ParameterSetBlob.h"
 #include "DataFormats/Provenance/interface/ParameterSetID.h"
 #include "DataFormats/Provenance/interface/ProcessHistoryRegistry.h"
@@ -79,7 +78,7 @@ namespace edm {
       lumiEntryNumber_(0LL),
       runEntryNumber_(0LL),
       metaDataTree_(0),
-      entryDescriptionTree_(0),
+      parentageTree_(0),
       eventHistoryTree_(0),
       pEventAux_(0),
       pLumiAux_(0),
@@ -87,12 +86,12 @@ namespace edm {
       eventEntryInfoVector_(),
       lumiEntryInfoVector_(),
       runEntryInfoVector_(),
-      pProductProvenanceVector_(&eventEntryInfoVector_),
+      pEventEntryInfoVector_(&eventEntryInfoVector_),
       pLumiEntryInfoVector_(&lumiEntryInfoVector_),
       pRunEntryInfoVector_(&runEntryInfoVector_),
       pHistory_(0),
       eventTree_(static_cast<EventPrincipal *>(0),
-                 filePtr_, InEvent, pEventAux_, pProductProvenanceVector_,
+                 filePtr_, InEvent, pEventAux_, pEventEntryInfoVector_,
                  om_->basketSize(), om_->splitLevel(), om_->treeMaxVirtualSize()),
       lumiTree_(static_cast<LuminosityBlockPrincipal *>(0),
                 filePtr_, InLumi, pLumiAux_, pLumiEntryInfoVector_,
@@ -118,7 +117,7 @@ namespace edm {
     }
     // Don't split metadata tree or event description tree
     metaDataTree_         = RootOutputTree::makeTTree(filePtr_.get(), poolNames::metaDataTreeName(), 0);
-    entryDescriptionTree_ = RootOutputTree::makeTTree(filePtr_.get(), poolNames::entryDescriptionTreeName(), 0);
+    parentageTree_ = RootOutputTree::makeTTree(filePtr_.get(), poolNames::parentageTreeName(), 0);
 
     // Create the tree that will carry (event) History objects.
     eventHistoryTree_     = RootOutputTree::makeTTree(filePtr_.get(), poolNames::eventHistoryTreeName(), om_->splitLevel());
@@ -209,7 +208,7 @@ namespace edm {
     // first before writing anything to the file about this event
     // NOTE: pEventAux_ must be set before calling fillBranches since it gets written out
     // in that routine.
-    fillBranches(InEvent, e, pProductProvenanceVector_);
+    fillBranches(InEvent, e, pEventEntryInfoVector_);
      
     // History branch
     History historyForOutput(e.history());
@@ -259,29 +258,29 @@ namespace edm {
     fillBranches(InRun, r, pRunEntryInfoVector_);
   }
 
-  void RootOutputFile::writeEntryDescriptions() {
-    EntryDescriptionID const* hash(0);
-    EventEntryDescription const*   desc(0);
+  void RootOutputFile::writeParentageRegistry() {
+    ParentageID const* hash(0);
+    Parentage const*   desc(0);
     
-    if (!entryDescriptionTree_->Branch(poolNames::entryDescriptionIDBranchName().c_str(), 
+    if (!parentageTree_->Branch(poolNames::parentageIDBranchName().c_str(), 
 					&hash, om_->basketSize(), 0))
       throw edm::Exception(edm::errors::FatalRootError) 
-	<< "Failed to create a branch for EntryDescriptionIDs in the output file";
+	<< "Failed to create a branch for ParentageIDs in the output file";
 
-    if (!entryDescriptionTree_->Branch(poolNames::entryDescriptionBranchName().c_str(), 
+    if (!parentageTree_->Branch(poolNames::parentageBranchName().c_str(), 
 					&desc, om_->basketSize(), 0))
       throw edm::Exception(edm::errors::FatalRootError) 
-	<< "Failed to create a branch for EventEntryDescriptions in the output file";
+	<< "Failed to create a branch for Parentages in the output file";
 
-    EntryDescriptionRegistry& edreg = *EntryDescriptionRegistry::instance();
-    for (EntryDescriptionRegistry::const_iterator
-	   i = edreg.begin(),
-	   e = edreg.end();
+    ParentageRegistry& ptReg = *ParentageRegistry::instance();
+    for (ParentageRegistry::const_iterator
+	   i = ptReg.begin(),
+	   e = ptReg.end();
 	 i != e;
 	 ++i) {
-	hash = const_cast<EntryDescriptionID*>(&(i->first)); // cast needed because keys are const
+	hash = const_cast<ParentageID*>(&(i->first)); // cast needed because keys are const
 	desc = &(i->second);
-	entryDescriptionTree_->Fill();
+	parentageTree_->Fill();
       }
   }
 
@@ -319,13 +318,6 @@ namespace edm {
   void RootOutputFile::writeProcessHistoryRegistry() { 
     ProcessHistoryRegistry::collection_type *p = &ProcessHistoryRegistry::instance()->data();
     TBranch* b = metaDataTree_->Branch(poolNames::processHistoryMapBranchName().c_str(), &p, om_->basketSize(), 0);
-    assert(b);
-    b->Fill();
-  }
-
-  void RootOutputFile::writeModuleDescriptionRegistry() { 
-    ModuleDescriptionRegistry::collection_type *p = &ModuleDescriptionRegistry::instance()->data();
-    TBranch* b = metaDataTree_->Branch(poolNames::moduleDescriptionBranchName().c_str(), &p, om_->basketSize(), 0);
     assert(b);
     b->Fill();
   }
@@ -390,7 +382,7 @@ namespace edm {
     metaDataTree_->SetEntries(-1);
     RootOutputTree::writeTTree(metaDataTree_);
 
-    RootOutputTree::writeTTree(entryDescriptionTree_);
+    RootOutputTree::writeTTree(parentageTree_);
 
     // Create branch aliases for all the branches in the
     // events/lumis/runs trees. The loop is over all types of data
@@ -435,7 +427,7 @@ namespace edm {
    void RootOutputFile::insertAncestors(const ProductProvenance& iGetParents,
                                         const BranchMapper& iMapper,
                                         std::set<ProductProvenance>& oToFill) {
-      const std::vector<BranchID>& parentIDs = iGetParents.entryDescription().parents();
+      const std::vector<BranchID>& parentIDs = iGetParents.parentage().parents();
       for(std::vector<BranchID>::const_iterator it=parentIDs.begin(), itEnd = parentIDs.end();
           it != itEnd; ++it) {
          branchesWithStoredHistory_.insert(*it);
