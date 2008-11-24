@@ -212,7 +212,7 @@ namespace edm {
      
     // History branch
     History historyForOutput(e.history());
-    historyForOutput.addEntry(om_->selectorConfig());
+    historyForOutput.addEventSelectionEntry(om_->selectorConfig());
     pHistory_ = &historyForOutput;
     int sz = eventHistoryTree_->Fill();
     if ( sz <= 0)
