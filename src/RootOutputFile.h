@@ -59,7 +59,6 @@ namespace edm {
     void writeProductDescriptionRegistry();
     void writeParentageRegistry();
     void writeBranchIDListRegistry();
-    void writeParameterSetIDListRegistry();
     void writeProductDependencies();
 
     void finishEndFile();

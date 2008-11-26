@@ -30,7 +30,6 @@
 #include "DataFormats/Provenance/interface/ProductStatus.h"
 #include "DataFormats/Common/interface/BasicHandle.h"
 #include "DataFormats/Provenance/interface/BranchIDListRegistry.h"
-#include "DataFormats/Provenance/interface/ParameterSetIDListRegistry.h"
 #include "FWCore/Framework/interface/ConstProductRegistry.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/Registry.h"
@@ -325,13 +324,6 @@ namespace edm {
   void RootOutputFile::writeBranchIDListRegistry() { 
     BranchIDListRegistry::collection_type *p = &BranchIDListRegistry::instance()->data();
     TBranch* b = metaDataTree_->Branch(poolNames::branchIDListBranchName().c_str(), &p, om_->basketSize(), 0);
-    assert(b);
-    b->Fill();
-  }
-
-  void RootOutputFile::writeParameterSetIDListRegistry() { 
-    ParameterSetIDListRegistry::collection_type *p = &ParameterSetIDListRegistry::instance()->data();
-    TBranch* b = metaDataTree_->Branch(poolNames::parameterSetIDListBranchName().c_str(), &p, om_->basketSize(), 0);
     assert(b);
     b->Fill();
   }
