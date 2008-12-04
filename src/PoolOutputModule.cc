@@ -94,7 +94,7 @@ namespace edm {
 
   void PoolOutputModule::openFile(FileBlock const& fb) {
     if (!isFileOpen()) {
-      if (fb.tree() == 0 || fb.fileFormatVersion().value_ < 8) {
+      if (fb.tree() == 0) {
 	fastCloning_ = false;
       }
       doOpenFile();
