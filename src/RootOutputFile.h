@@ -77,16 +77,12 @@ namespace edm {
 
     void setBranchAliases(TTree *tree, Selections const& branches) const;
 
-    template <typename T>
-    void fillBranches(BranchType const& branchType, Principal const& principal, std::vector<T> * productProvenanceVecPtr);
+    void fillBranches(BranchType const& branchType,
+		      Principal const& principal,
+		      std::vector<ProductProvenance> * productProvenanceVecPtr);
 
-     template <typename T>
-     static void insertAncestors(const T& iParents,
-                          const BranchMapper& iMapper,
-                          std::set<T>& oToFill);
-
-     void insertAncestors(const ProductProvenance& iGetParents,
-                          const BranchMapper& iMapper,
+     void insertAncestors(ProductProvenance const& iGetParents,
+                          BranchMapper const& iMapper,
                           std::set<ProductProvenance>& oToFill);
         
     //-------------------------------
@@ -124,86 +120,6 @@ namespace edm {
     std::set<BranchID> branchesWithStoredHistory_;
   };
    
-   //Used by the 'fillBranches' code
-   template <typename T>
-   void RootOutputFile::insertAncestors(const T& iGetParents,
-                                        const BranchMapper& iMapper,
-                                        std::set<T>& oToFill) {
-      //do nothing
-   }
-
-   
-   
-  template <typename T>
-  void RootOutputFile::fillBranches(
-		BranchType const& branchType,
-		Principal const& principal,
-		std::vector<T> * productProvenanceVecPtr) {
-
-    std::vector<boost::shared_ptr<EDProduct> > dummies;
-
-    bool const fastCloning = (branchType == InEvent) && currentlyFastCloning_;
-    
-    OutputItemList const& items = om_->selectedOutputItemList()[branchType];
-
-    std::set<T> keep;
-
-    std::set<T> keepPlusAncestors;
-
-    // Loop over EDProduct branches, fill the provenance, and write the branch.
-    for (OutputItemList::const_iterator i = items.begin(), iEnd = items.end(); i != iEnd; ++i) {
-
-      BranchID const& id = i->branchDescription_->branchID();
-      branchesWithStoredHistory_.insert(id);
-       
-      bool getProd = (i->branchDescription_->produced() ||
-	 !fastCloning || treePointers_[branchType]->uncloned(i->branchDescription_->branchName()));
-
-      EDProduct const* product = 0;
-      OutputHandle<T> const oh = principal.getForOutput<T>(id, getProd);
-      if (!oh.productProvenance()) {
-	// No product with this ID is in the event.
-	// Create and write the provenance.
-	if (i->branchDescription_->produced()) {
-          keep.insert(T(i->branchDescription_->branchID(),
-		      productstatus::neverCreated()));
-          keepPlusAncestors.insert(T(i->branchDescription_->branchID(),
-			      productstatus::neverCreated()));
-	} else {
-          keep.insert(T(i->branchDescription_->branchID(),
-		      productstatus::dropped()));
-          keepPlusAncestors.insert(T(i->branchDescription_->branchID(),
-			      productstatus::dropped()));
-	}
-      } else {
-	product = oh.wrapper();
-        keep.insert(*oh.productProvenance());
-        keepPlusAncestors.insert(*oh.productProvenance());
-        assert(principal.branchMapperPtr());
-        insertAncestors(*oh.productProvenance(),*principal.branchMapperPtr(),keepPlusAncestors);
-      }
-      if (getProd) {
-	if (product == 0) {
-	  // No product with this ID is in the event.
-	  // Add a null product.
-	  TClass *cp = gROOT->GetClass(i->branchDescription_->wrappedName().c_str());
-	  boost::shared_ptr<EDProduct> dummy(static_cast<EDProduct *>(cp->New()));
-	  dummies.push_back(dummy);
-	  product = dummy.get();
-	}
-	i->product_ = product;
-      }
-    }
-     
-    if (om_->dropMetaData()) {
-      productProvenanceVecPtr->assign(keep.begin(),keep.end());
-    } else {
-      productProvenanceVecPtr->assign(keepPlusAncestors.begin(),keepPlusAncestors.end());
-    }
-    treePointers_[branchType]->fillTree();
-    productProvenanceVecPtr->clear();
-  }
-
 }
 
 #endif
