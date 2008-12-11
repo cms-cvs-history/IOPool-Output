@@ -82,7 +82,7 @@ namespace edm {
 		      std::vector<ProductProvenance> * productProvenanceVecPtr);
 
      void insertAncestors(ProductProvenance const& iGetParents,
-                          BranchMapper const& iMapper,
+                          Principal const& principal,
                           std::set<ProductProvenance>& oToFill);
         
     //-------------------------------

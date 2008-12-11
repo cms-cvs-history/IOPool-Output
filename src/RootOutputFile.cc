@@ -418,21 +418,27 @@ namespace edm {
    
   void
   RootOutputFile::insertAncestors(ProductProvenance const& iGetParents,
-                                  BranchMapper const& iMapper,
+                                  Principal const& principal,
                                   std::set<ProductProvenance>& oToFill) {
-      std::vector<BranchID> const& parentIDs = iGetParents.parentage().parents();
-      for(std::vector<BranchID>::const_iterator it=parentIDs.begin(), itEnd = parentIDs.end();
+    if(om_->dropMetaData() == PoolOutputModule::DropAll) return;
+    if(om_->dropMetaDataForDroppedData()) return;
+    BranchMapper const& iMapper = *principal.branchMapperPtr();
+    std::vector<BranchID> const& parentIDs = iGetParents.parentage().parents();
+    for(std::vector<BranchID>::const_iterator it=parentIDs.begin(), itEnd = parentIDs.end();
           it != itEnd; ++it) {
-         branchesWithStoredHistory_.insert(*it);
-         boost::shared_ptr<ProductProvenance> info = iMapper.branchToEntryInfo(*it);
-         if(info) {
-            if(oToFill.insert(*info).second) {
-               //haven't seen this one yet
-               insertAncestors(*info, iMapper, oToFill);
-            }
-         }
+      branchesWithStoredHistory_.insert(*it);
+      boost::shared_ptr<ProductProvenance> info = iMapper.branchToEntryInfo(*it);
+      if(info) {
+        if(om_->dropMetaData() == PoolOutputModule::DropNone ||
+		 principal.getProvenance(info->branchID()).product().produced()) {
+	  if(oToFill.insert(*info).second) {
+            //haven't seen this one yet
+            insertAncestors(*info, principal, oToFill);
+	  }
+	}
       }
-   }
+    }
+  }
    
   void RootOutputFile::fillBranches(
 		BranchType const& branchType,
@@ -445,9 +451,7 @@ namespace edm {
     
     OutputItemList const& items = om_->selectedOutputItemList()[branchType];
 
-    std::set<ProductProvenance> keep;
-
-    std::set<ProductProvenance> keepPlusAncestors;
+    std::set<ProductProvenance> provenanceToKeep;
 
     // Loop over EDProduct branches, fill the provenance, and write the branch.
     for (OutputItemList::const_iterator i = items.begin(), iEnd = items.end(); i != iEnd; ++i) {
@@ -455,31 +459,33 @@ namespace edm {
       BranchID const& id = i->branchDescription_->branchID();
       branchesWithStoredHistory_.insert(id);
        
-      bool getProd = (i->branchDescription_->produced() ||
-	 !fastCloning || treePointers_[branchType]->uncloned(i->branchDescription_->branchName()));
+      bool produced = i->branchDescription_->produced();
+      bool keepProvenance = om_->dropMetaData() == PoolOutputModule::DropNone ||
+			   (om_->dropMetaData() == PoolOutputModule::DropPrior && produced);
+      bool getProd = (produced || !fastCloning ||
+	 treePointers_[branchType]->uncloned(i->branchDescription_->branchName()));
 
       EDProduct const* product = 0;
       OutputHandle const oh = principal.getForOutput(id, getProd);
       if (!oh.productProvenance()) {
 	// No product with this ID is in the event.
 	// Create and write the provenance.
-	if (i->branchDescription_->produced()) {
-          keep.insert(ProductProvenance(i->branchDescription_->branchID(),
-		      productstatus::neverCreated()));
-          keepPlusAncestors.insert(ProductProvenance(i->branchDescription_->branchID(),
-			      productstatus::neverCreated()));
-	} else {
-          keep.insert(ProductProvenance(i->branchDescription_->branchID(),
-		      productstatus::dropped()));
-          keepPlusAncestors.insert(ProductProvenance(i->branchDescription_->branchID(),
-			      productstatus::dropped()));
+	if (keepProvenance) {
+	  if (produced) {
+            provenanceToKeep.insert(ProductProvenance(i->branchDescription_->branchID(),
+		        productstatus::neverCreated()));
+	  } else {
+            provenanceToKeep.insert(ProductProvenance(i->branchDescription_->branchID(),
+		        productstatus::dropped()));
+	  }
 	}
       } else {
 	product = oh.wrapper();
-        keep.insert(*oh.productProvenance());
-        keepPlusAncestors.insert(*oh.productProvenance());
-        assert(principal.branchMapperPtr());
-        insertAncestors(*oh.productProvenance(),*principal.branchMapperPtr(),keepPlusAncestors);
+	if (keepProvenance) {
+	  provenanceToKeep.insert(*oh.productProvenance());
+	  assert(principal.branchMapperPtr());
+	  insertAncestors(*oh.productProvenance(), principal, provenanceToKeep);
+	}
       }
       if (getProd) {
 	if (product == 0) {
@@ -494,11 +500,7 @@ namespace edm {
       }
     }
      
-    if (om_->dropMetaData()) {
-      productProvenanceVecPtr->assign(keep.begin(),keep.end());
-    } else {
-      productProvenanceVecPtr->assign(keepPlusAncestors.begin(),keepPlusAncestors.end());
-    }
+    productProvenanceVecPtr->assign(provenanceToKeep.begin(), provenanceToKeep.end());
     treePointers_[branchType]->fillTree();
     productProvenanceVecPtr->clear();
   }

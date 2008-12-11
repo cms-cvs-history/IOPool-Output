@@ -33,11 +33,23 @@ namespace edm {
     splitLevel_(pset.getUntrackedParameter<int>("splitLevel", 99)),
     treeMaxVirtualSize_(pset.getUntrackedParameter<int>("treeMaxVirtualSize", -1)),
     fastCloning_(pset.getUntrackedParameter<bool>("fastCloning", true) && wantAllEvents()),
+    dropMetaData_(DropNone),
     dropMetaDataForDroppedData_(pset.getUntrackedParameter<bool>("dropMetaDataForDroppedData", false)),
     moduleLabel_(pset.getParameter<std::string>("@module_label")),
     outputFileCount_(0),
     inputFileCount_(0),
     rootOutputFile_() {
+      std::string dropMetaData(pset.getUntrackedParameter<std::string>("dropMetaData", std::string()));
+      if (dropMetaData.empty()) dropMetaData_ = DropNone;
+      else if (dropMetaData == std::string("NONE")) dropMetaData_ = DropNone;
+      else if (dropMetaData == std::string("PRIOR")) dropMetaData_ = DropPrior;
+      else if (dropMetaData == std::string("ALL")) dropMetaData_ = DropAll;
+      else {
+        throw edm::Exception(errors::Configuration, "Illegal dropMetaData parameter value: ")
+            << dropMetaData << ".\n"
+            << "Legal values are 'NONE', 'PRIOR', and 'ALL'.\n";
+      }
+
     // We don't use this next parameter, but we read it anyway because it is part
     // of the configuration of this module.  An external parser creates the
     // configuration by reading this source code.

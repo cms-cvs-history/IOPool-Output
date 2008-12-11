@@ -23,6 +23,7 @@ namespace edm {
   class RootOutputFile;
 
   class PoolOutputModule : public OutputModule {
+  enum DropMetaData { DropNone, DropPrior, DropAll };
   public:
     friend class RootOutputFile;
     explicit PoolOutputModule(ParameterSet const& ps);
@@ -34,7 +35,8 @@ namespace edm {
     int const& splitLevel() const {return splitLevel_;}
     int const& treeMaxVirtualSize() const {return treeMaxVirtualSize_;}
     bool const& fastCloning() const {return fastCloning_;}
-    bool const& dropMetaData() const {return dropMetaDataForDroppedData_;}
+    DropMetaData const& dropMetaData() const {return dropMetaData_;}
+    bool const& dropMetaDataForDroppedData() const {return dropMetaDataForDroppedData_;}
 
     struct OutputItem {
       class Sorter {
@@ -109,6 +111,7 @@ namespace edm {
     int const splitLevel_;
     int const treeMaxVirtualSize_;
     bool fastCloning_;
+    DropMetaData dropMetaData_;
     bool dropMetaDataForDroppedData_;
     std::string const moduleLabel_;
     int outputFileCount_;
