@@ -331,7 +331,7 @@ namespace edm {
   void RootOutputFile::writeParameterSetRegistry() { 
     typedef std::map<ParameterSetID, ParameterSetBlob> ParameterSetMap;
     ParameterSetMap psetMap;
-    pset::fill(pset::Registry::instance(), psetMap);
+    pset::fillMap(pset::Registry::instance(), psetMap);
     ParameterSetMap *pPsetMap = &psetMap;
     TBranch* b = metaDataTree_->Branch(poolNames::parameterSetMapBranchName().c_str(), &pPsetMap, om_->basketSize(), 0);
     assert(b);
