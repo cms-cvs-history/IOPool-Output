@@ -311,7 +311,12 @@ namespace edm {
   }
 
   void RootOutputFile::writeProcessConfigurationRegistry() {
-    // We don't do this yet; currently we're storing a slightly bloated ProcessHistoryRegistry.
+/*
+    ProcessConfigurationRegistry::collection_type *p = &ProcessConfigurationRegistry::instance()->data();
+    TBranch* b = metaDataTree_->Branch(poolNames::processConfigurationBranchName().c_str(), &p, om_->basketSize(), 0);
+    assert(b);
+    b->Fill();
+*/
   }
 
   void RootOutputFile::writeProcessHistoryRegistry() { 
