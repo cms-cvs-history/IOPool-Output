@@ -23,9 +23,11 @@
 #include "DataFormats/Provenance/interface/BranchType.h"
 #include "DataFormats/Provenance/interface/FileID.h"
 #include "DataFormats/Provenance/interface/FileIndex.h"
-#include "DataFormats/Provenance/interface/Selections.h"
+#include "DataFormats/Provenance/interface/LuminosityBlockAuxiliary.h"
 #include "DataFormats/Provenance/interface/ParentageID.h"
 #include "DataFormats/Provenance/interface/ProductProvenance.h"
+#include "DataFormats/Provenance/interface/RunAuxiliary.h"
+#include "DataFormats/Provenance/interface/Selections.h"
 #include "IOPool/Output/interface/PoolOutputModule.h"
 #include "IOPool/Output/src/RootOutputTree.h"
 
@@ -106,6 +108,8 @@ namespace edm {
     TTree* parameterSetsTree_;
     TTree* parentageTree_;
     TTree* eventHistoryTree_;
+    LuminosityBlockAuxiliary  lumiAux_;
+    RunAuxiliary	      runAux_;
     EventAuxiliary const*           pEventAux_;
     LuminosityBlockAuxiliary const* pLumiAux_;
     RunAuxiliary const*             pRunAux_;

@@ -4,8 +4,6 @@
 #include "FWCore/Utilities/interface/GlobalIdentifier.h"
 
 #include "DataFormats/Provenance/interface/EventAuxiliary.h" 
-#include "DataFormats/Provenance/interface/LuminosityBlockAuxiliary.h" 
-#include "DataFormats/Provenance/interface/RunAuxiliary.h" 
 #include "FWCore/Version/interface/GetFileFormatVersion.h"
 #include "DataFormats/Provenance/interface/FileFormatVersion.h"
 #include "FWCore/Utilities/interface/EDMException.h"
@@ -81,9 +79,11 @@ namespace edm {
       parameterSetsTree_(0),
       parentageTree_(0),
       eventHistoryTree_(0),
+      lumiAux_(),
+      runAux_(),
       pEventAux_(0),
-      pLumiAux_(0),
-      pRunAux_(0),
+      pLumiAux_(&lumiAux_),
+      pRunAux_(&runAux_),
       eventEntryInfoVector_(),
       lumiEntryInfoVector_(),
       runEntryInfoVector_(),
@@ -351,6 +351,7 @@ namespace edm {
      
     // History branch
     History historyForOutput(e.history());
+    historyForOutput.setProcessHistoryID(e.processHistoryID());
     historyForOutput.addEventSelectionEntry(om_->selectorConfig());
     pHistory_ = &historyForOutput;
     int sz = eventHistoryTree_->Fill();
@@ -381,22 +382,24 @@ namespace edm {
 
   void RootOutputFile::writeLuminosityBlock(LuminosityBlockPrincipal const& lb) {
     // Auxiliary branch
-    // NOTE: pLumiAux_ must be set before calling fillBranches since it gets written out
-    // in that routine.
-    pLumiAux_ = &lb.aux();
+    // NOTE: lumiAux_ must be filled before calling fillBranches since it gets written out in that routine.
+    lumiAux_ = lb.aux();
+    // Use the updated process historyID
+    lumiAux_.setProcessHistoryID(lb.processHistoryID());
     // Add lumi to index.
-    fileIndex_.addEntry(pLumiAux_->run(), pLumiAux_->luminosityBlock(), 0U, lumiEntryNumber_);
+    fileIndex_.addEntry(lumiAux_.run(), lumiAux_.luminosityBlock(), 0U, lumiEntryNumber_);
     ++lumiEntryNumber_;
     fillBranches(InLumi, lb, pLumiEntryInfoVector_);
   }
 
   void RootOutputFile::writeRun(RunPrincipal const& r) {
     // Auxiliary branch
-    // NOTE: pRunAux_ must be set before calling fillBranches since it gets written out
-    // in that routine.
-    pRunAux_ = &r.aux();
+    // NOTE: runAux_ must be filled before calling fillBranches since it gets written out in that routine.
+    runAux_ = r.aux();
+    // Use the updated process historyID
+    runAux_.setProcessHistoryID(r.processHistoryID());
     // Add run to index.
-    fileIndex_.addEntry(pRunAux_->run(), 0U, 0U, runEntryNumber_);
+    fileIndex_.addEntry(runAux_.run(), 0U, 0U, runEntryNumber_);
     ++runEntryNumber_;
     fillBranches(InRun, r, pRunEntryInfoVector_);
   }
