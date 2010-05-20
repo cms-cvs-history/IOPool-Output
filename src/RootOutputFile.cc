@@ -75,6 +75,7 @@ namespace edm {
       eventEntryNumber_(0LL),
       lumiEntryNumber_(0LL),
       runEntryNumber_(0LL),
+      indexIntoFile_(),
       metaDataTree_(0),
       parameterSetsTree_(0),
       parentageTree_(0),
@@ -373,6 +374,7 @@ namespace edm {
 
     // Add event to index
     fileIndex_.addEntry(pEventAux_->run(), pEventAux_->luminosityBlock(), pEventAux_->event(), eventEntryNumber_);
+    indexIntoFile_.addEntry(e.processHistoryID(), pEventAux_->run(), pEventAux_->luminosityBlock(), pEventAux_->event(), eventEntryNumber_);
     ++eventEntryNumber_;
 
     // Report event written 
@@ -388,6 +390,7 @@ namespace edm {
     lumiAux_.setProcessHistoryID(lb.processHistoryID());
     // Add lumi to index.
     fileIndex_.addEntry(lumiAux_.run(), lumiAux_.luminosityBlock(), 0U, lumiEntryNumber_);
+    indexIntoFile_.addEntry(lb.processHistoryID(), lumiAux_.run(), lumiAux_.luminosityBlock(), 0U, lumiEntryNumber_);
     ++lumiEntryNumber_;
     fillBranches(InLumi, lb, pLumiEntryInfoVector_);
   }
@@ -400,6 +403,7 @@ namespace edm {
     runAux_.setProcessHistoryID(r.processHistoryID());
     // Add run to index.
     fileIndex_.addEntry(runAux_.run(), 0U, 0U, runEntryNumber_);
+    indexIntoFile_.addEntry(r.processHistoryID(), runAux_.run(), 0U, 0U, runEntryNumber_);
     ++runEntryNumber_;
     fillBranches(InRun, r, pRunEntryInfoVector_);
   }
@@ -441,6 +445,14 @@ namespace edm {
     fileIndex_.sortBy_Run_Lumi_Event();
     FileIndex* findexPtr = &fileIndex_;
     TBranch* b = metaDataTree_->Branch(poolNames::fileIndexBranchName().c_str(), &findexPtr, om_->basketSize(), 0);
+    assert(b);
+    b->Fill();
+  }
+
+  void RootOutputFile::writeIndexIntoFile() {
+    indexIntoFile_.sortBy_Index_Run_Lumi_Event();
+    IndexIntoFile* iifPtr = &indexIntoFile_;
+    TBranch* b = metaDataTree_->Branch(poolNames::indexIntoFileBranchName().c_str(), &iifPtr, om_->basketSize(), 0);
     assert(b);
     b->Fill();
   }

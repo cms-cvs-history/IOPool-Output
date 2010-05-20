@@ -23,6 +23,7 @@
 #include "DataFormats/Provenance/interface/BranchType.h"
 #include "DataFormats/Provenance/interface/FileID.h"
 #include "DataFormats/Provenance/interface/FileIndex.h"
+#include "DataFormats/Provenance/interface/IndexIntoFile.h"
 #include "DataFormats/Provenance/interface/LuminosityBlockAuxiliary.h"
 #include "DataFormats/Provenance/interface/ParentageID.h"
 #include "DataFormats/Provenance/interface/ProductProvenance.h"
@@ -54,6 +55,7 @@ namespace edm {
     void writeFileFormatVersion();
     void writeFileIdentifier();
     void writeFileIndex();
+    void writeIndexIntoFile();
     void writeEventHistory();
     void writeProcessConfigurationRegistry();
     void writeProcessHistoryRegistry();
@@ -104,6 +106,7 @@ namespace edm {
     FileIndex::EntryNumber_t eventEntryNumber_;
     FileIndex::EntryNumber_t lumiEntryNumber_;
     FileIndex::EntryNumber_t runEntryNumber_;
+    IndexIntoFile indexIntoFile_;
     TTree* metaDataTree_;
     TTree* parameterSetsTree_;
     TTree* parentageTree_;
