@@ -71,7 +71,6 @@ namespace edm {
       whyNotFastClonable_(om_->whyNotFastClonable()),
       filePtr_(TFile::Open(file_.c_str(), "recreate", "", om_->compressionLevel())),
       fid_(),
-      fileIndex_(),
       eventEntryNumber_(0LL),
       lumiEntryNumber_(0LL),
       runEntryNumber_(0LL),
@@ -373,7 +372,6 @@ namespace edm {
     pHistory_ = &e.history();
 
     // Add event to index
-    fileIndex_.addEntry(pEventAux_->run(), pEventAux_->luminosityBlock(), pEventAux_->event(), eventEntryNumber_);
     indexIntoFile_.addEntry(e.processHistoryID(), pEventAux_->run(), pEventAux_->luminosityBlock(), pEventAux_->event(), eventEntryNumber_);
     ++eventEntryNumber_;
 
@@ -389,7 +387,6 @@ namespace edm {
     // Use the updated process historyID
     lumiAux_.setProcessHistoryID(lb.processHistoryID());
     // Add lumi to index.
-    fileIndex_.addEntry(lumiAux_.run(), lumiAux_.luminosityBlock(), 0U, lumiEntryNumber_);
     indexIntoFile_.addEntry(lb.processHistoryID(), lumiAux_.run(), lumiAux_.luminosityBlock(), 0U, lumiEntryNumber_);
     ++lumiEntryNumber_;
     fillBranches(InLumi, lb, pLumiEntryInfoVector_);
@@ -402,7 +399,6 @@ namespace edm {
     // Use the updated process historyID
     runAux_.setProcessHistoryID(r.processHistoryID());
     // Add run to index.
-    fileIndex_.addEntry(runAux_.run(), 0U, 0U, runEntryNumber_);
     indexIntoFile_.addEntry(r.processHistoryID(), runAux_.run(), 0U, 0U, runEntryNumber_);
     ++runEntryNumber_;
     fillBranches(InRun, r, pRunEntryInfoVector_);
@@ -437,14 +433,6 @@ namespace edm {
   void RootOutputFile::writeFileIdentifier() {
     FileID* fidPtr = &fid_;
     TBranch* b = metaDataTree_->Branch(poolNames::fileIdentifierBranchName().c_str(), &fidPtr, om_->basketSize(), 0);
-    assert(b);
-    b->Fill();
-  }
-
-  void RootOutputFile::writeFileIndex() {
-    fileIndex_.sortBy_Run_Lumi_Event();
-    FileIndex* findexPtr = &fileIndex_;
-    TBranch* b = metaDataTree_->Branch(poolNames::fileIndexBranchName().c_str(), &findexPtr, om_->basketSize(), 0);
     assert(b);
     b->Fill();
   }
