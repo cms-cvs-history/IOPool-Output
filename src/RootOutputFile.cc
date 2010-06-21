@@ -438,7 +438,7 @@ namespace edm {
   }
 
   void RootOutputFile::writeIndexIntoFile() {
-    indexIntoFile_.sortBy_Index_Run_Lumi_Event();
+    indexIntoFile_.sortVector_Run_Or_Lumi_Entries();
     IndexIntoFile* iifPtr = &indexIntoFile_;
     TBranch* b = metaDataTree_->Branch(poolNames::indexIntoFileBranchName().c_str(), &iifPtr, om_->basketSize(), 0);
     assert(b);
