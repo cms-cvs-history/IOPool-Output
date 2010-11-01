@@ -295,9 +295,6 @@ namespace edm {
     dataSet.setAllowAnything();
     desc.addUntracked<ParameterSetDescription>("dataset", dataSet)
      ->setComment("PSet is only used by Data Operations and not by this module.");
-    dataSet.addUntracked<std::string>("dataTier", defaultString);
-    dataSet.addUntracked<std::string>("filterName", defaultString);
-    desc.addUntracked<ParameterSetDescription>("dataset", dataSet);
 
     OutputModule::fillDescription(desc);
 
